@@ -12,7 +12,7 @@ const userscriptHeader = `// ==UserScript==
 // @author       You
 // @match        *://*/*
 // @grant        none
-// @run-at       document-start
+// @run-at       document-idle
 // ==/UserScript==
 
 `;
@@ -31,7 +31,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         banner: '// Built with MockMonkey'
-      }
+      },
+      treeshake: false
     }
   },
   plugins: [

@@ -85,7 +85,7 @@ export class Panel {
           <form class="mm-form" data-action="add-rule">
             <div class="mm-form-group">
               <label class="mm-label">URL 模式 *</label>
-              <input class="mm-input" name="pattern" placeholder="/api/user 或 /\\/api\\/user\\/\\d+/" required>
+              <input class="mm-input" name="pattern" placeholder="/api/user" required>
               <span class="mm-hint">支持字符串或正则表达式（格式：/pattern/flags）</span>
             </div>
 
