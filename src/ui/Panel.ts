@@ -14,6 +14,7 @@ export class Panel {
   private dragStartTime = 0;
   private dragOffset = { x: 0, y: 0 };
   private buttonPosition = { x: 20, y: 20 }; // 默认位置 (right, bottom)
+  private currentRules: RuleItem[] = []; // 存储当前规则列表用于导出
 
   constructor(private onAddRule: (rule: RuleFormData) => void) {
     // 从 localStorage 加载保存的位置
@@ -137,7 +138,6 @@ export class Panel {
     `;
 
     this.shadowRoot.appendChild(panel);
-    this.bindEvents();
   }
 
   /**
@@ -324,6 +324,114 @@ export class Panel {
   }
 
   /**
+   * 导出规则
+   */
+  private exportRules(): void {
+    try {
+      // 将规则序列化为可导入的格式
+      const exportData = this.currentRules.map((rule) => ({
+        pattern: rule.patternStr,
+        response: rule.response,
+        enabled: rule.enabled,
+        delay: rule.delay,
+        status: rule.status
+      }));
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mock-monkey-rules-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      console.log('[MockMonkey] 规则导出成功:', exportData.length, '条');
+    } catch (e) {
+      console.error('[MockMonkey] 导出规则失败:', e);
+    }
+  }
+
+  /**
+   * 导入规则
+   */
+  private importRules(): void {
+    const fileInput = this.shadowRoot?.querySelector('[data-action="import-file"]') as HTMLInputElement;
+    if (fileInput) {
+      // 重置 value，确保选择相同文件时也能触发 change 事件
+      fileInput.value = '';
+      fileInput.click();
+    }
+  }
+
+  /**
+   * 处理导入文件
+   */
+  private handleImportFile(e: Event): void {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result as string;
+        const importedRules = JSON.parse(content) as Array<{
+          pattern: string;
+          response: unknown;
+          enabled?: boolean;
+          delay?: number;
+          status?: number;
+        }>;
+
+        if (!Array.isArray(importedRules)) {
+          throw new Error('导入文件格式错误：必须是数组');
+        }
+
+        // 触发导入回调，让外部处理规则导入
+        let successCount = 0;
+        importedRules.forEach((ruleData) => {
+          // 解析 pattern
+          let parsedPattern: string | RegExp = ruleData.pattern;
+          if (ruleData.pattern.startsWith('/')) {
+            try {
+              const match = ruleData.pattern.match(/^\/(.+)\/([gimuy]*)$/);
+              if (match) {
+                parsedPattern = new RegExp(match[1], match[2]);
+              }
+            } catch (err) {
+              console.warn('[MockMonkey] 跳过无效规则:', ruleData.pattern);
+              return;
+            }
+          }
+
+          this.onAddRule({
+            pattern: parsedPattern,
+            response: ruleData.response,
+            options: {
+              delay: ruleData.delay ?? 0,
+              status: ruleData.status ?? 200
+            }
+          });
+          successCount++;
+        });
+
+        console.log(`[MockMonkey] 成功导入 ${successCount} 条规则`);
+
+        // 重置 input
+        input.value = '';
+      } catch (e) {
+        console.error('[MockMonkey] 导入规则失败:', e);
+        alert('导入失败：' + (e as Error).message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  /**
    * 绑定事件
    */
   private bindEvents(): void {
@@ -344,6 +452,28 @@ export class Panel {
     // 清空网络请求
     this.shadowRoot.querySelector('[data-action="clear-requests"]')?.addEventListener('click', () => {
       this.updateNetworkRequests([]);
+    });
+
+    // 导出规则
+    this.shadowRoot.querySelector('[data-action="export"]')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.exportRules();
+      // 移除焦点，防止键盘事件重复触发
+      (e.currentTarget as HTMLElement).blur();
+    });
+
+    // 导入规则
+    this.shadowRoot.querySelector('[data-action="import"]')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.importRules();
+      (e.currentTarget as HTMLElement).blur();
+    });
+
+    // 导入文件选择
+    this.shadowRoot.querySelector('[data-action="import-file"]')?.addEventListener('change', (e) => {
+      this.handleImportFile(e);
     });
 
     // 添加规则表单
@@ -421,6 +551,9 @@ export class Panel {
    * 更新规则列表
    */
   updateRules(rules: RuleItem[]): void {
+    // 保存当前规则用于导出
+    this.currentRules = rules;
+
     if (!this.shadowRoot) return;
 
     const listContainer = this.shadowRoot.querySelector('[data-rules-list]');

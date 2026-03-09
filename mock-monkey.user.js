@@ -14,7 +14,7 @@
   "use strict";
   class MockManager {
     constructor() {
-      this.rules = /* @__PURE__ */ new Map();
+      this.rules =  new Map();
       this.storageKey = "mock-monkey-rules";
       this.loadFromStorage();
     }
@@ -165,7 +165,7 @@
     constructor() {
       this.requests = [];
       this.maxRecords = 500;
-      this.listeners = /* @__PURE__ */ new Set();
+      this.listeners =  new Set();
     }
     /**
      * 添加请求记录
@@ -447,7 +447,7 @@
     }
   }
   class Panel {
-    // 默认位置 (right, bottom)
+    // 存储当前规则列表用于导出
     constructor(onAddRule) {
       this.onAddRule = onAddRule;
       this.container = null;
@@ -460,6 +460,7 @@
       this.dragStartTime = 0;
       this.dragOffset = { x: 0, y: 0 };
       this.buttonPosition = { x: 20, y: 20 };
+      this.currentRules = [];
       this.handleMouseMove = (e) => {
         if (!this.toggleButton) return;
         const btn = this.toggleButton;
@@ -601,7 +602,6 @@
       <input type="file" class="mm-hidden" data-action="import-file" accept=".json">
     `;
       this.shadowRoot.appendChild(panel);
-      this.bindEvents();
     }
     /**
      * 创建切换按钮
@@ -696,6 +696,92 @@
       }
     }
     /**
+     * 导出规则
+     */
+    exportRules() {
+      try {
+        const exportData = this.currentRules.map((rule) => ({
+          pattern: rule.patternStr,
+          response: rule.response,
+          enabled: rule.enabled,
+          delay: rule.delay,
+          status: rule.status
+        }));
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+          type: "application/json"
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `mock-monkey-rules-${( new Date()).toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        console.log("[MockMonkey] 规则导出成功:", exportData.length, "条");
+      } catch (e) {
+        console.error("[MockMonkey] 导出规则失败:", e);
+      }
+    }
+    /**
+     * 导入规则
+     */
+    importRules() {
+      const fileInput = this.shadowRoot?.querySelector('[data-action="import-file"]');
+      if (fileInput) {
+        fileInput.value = "";
+        fileInput.click();
+      }
+    }
+    /**
+     * 处理导入文件
+     */
+    handleImportFile(e) {
+      const input = e.currentTarget;
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const content = event.target?.result;
+          const importedRules = JSON.parse(content);
+          if (!Array.isArray(importedRules)) {
+            throw new Error("导入文件格式错误：必须是数组");
+          }
+          let successCount = 0;
+          importedRules.forEach((ruleData) => {
+            let parsedPattern = ruleData.pattern;
+            if (ruleData.pattern.startsWith("/")) {
+              try {
+                const match = ruleData.pattern.match(/^\/(.+)\/([gimuy]*)$/);
+                if (match) {
+                  parsedPattern = new RegExp(match[1], match[2]);
+                }
+              } catch (err) {
+                console.warn("[MockMonkey] 跳过无效规则:", ruleData.pattern);
+                return;
+              }
+            }
+            this.onAddRule({
+              pattern: parsedPattern,
+              response: ruleData.response,
+              options: {
+                delay: ruleData.delay ?? 0,
+                status: ruleData.status ?? 200
+              }
+            });
+            successCount++;
+          });
+          console.log(`[MockMonkey] 成功导入 ${successCount} 条规则`);
+          input.value = "";
+        } catch (e2) {
+          console.error("[MockMonkey] 导入规则失败:", e2);
+          alert("导入失败：" + e2.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+    /**
      * 绑定事件
      */
     bindEvents() {
@@ -710,6 +796,21 @@
       });
       this.shadowRoot.querySelector('[data-action="clear-requests"]')?.addEventListener("click", () => {
         this.updateNetworkRequests([]);
+      });
+      this.shadowRoot.querySelector('[data-action="export"]')?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.exportRules();
+        e.currentTarget.blur();
+      });
+      this.shadowRoot.querySelector('[data-action="import"]')?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.importRules();
+        e.currentTarget.blur();
+      });
+      this.shadowRoot.querySelector('[data-action="import-file"]')?.addEventListener("change", (e) => {
+        this.handleImportFile(e);
       });
       this.shadowRoot.querySelector('[data-action="add-rule"]')?.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -771,6 +872,7 @@
      * 更新规则列表
      */
     updateRules(rules) {
+      this.currentRules = rules;
       if (!this.shadowRoot) return;
       const listContainer = this.shadowRoot.querySelector("[data-rules-list]");
       const countEl = this.shadowRoot.querySelector(".mm-rules-count");
