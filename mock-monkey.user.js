@@ -161,12 +161,87 @@
       }
     }
   }
+  class RequestRecorder {
+    constructor() {
+      this.requests = [];
+      this.maxRecords = 500;
+      this.listeners = /* @__PURE__ */ new Set();
+    }
+    /**
+     * 添加请求记录
+     */
+    addRequest(request) {
+      this.requests.unshift(request);
+      if (this.requests.length > this.maxRecords) {
+        this.requests = this.requests.slice(0, this.maxRecords);
+      }
+      this.notifyListeners();
+    }
+    /**
+     * 更新请求记录（用于更新响应等信息）
+     */
+    updateRequest(id, updates) {
+      const index = this.requests.findIndex((r) => r.id === id);
+      if (index !== -1) {
+        this.requests[index] = { ...this.requests[index], ...updates };
+        this.notifyListeners();
+      }
+    }
+    /**
+     * 获取所有请求记录
+     */
+    getRequests() {
+      return this.requests;
+    }
+    /**
+     * 清空所有记录
+     */
+    clear() {
+      this.requests = [];
+      this.notifyListeners();
+    }
+    /**
+     * 订阅请求变化
+     */
+    subscribe(listener) {
+      this.listeners.add(listener);
+      return () => {
+        this.listeners.delete(listener);
+      };
+    }
+    /**
+     * 通知所有监听器
+     */
+    notifyListeners() {
+      this.listeners.forEach((listener) => listener([...this.requests]));
+    }
+    /**
+     * 生成唯一 ID
+     */
+    static generateId() {
+      return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+  }
   class Interceptor {
-    constructor(manager) {
+    constructor(manager, recorder) {
       this.manager = manager;
+      this.recorder = recorder;
       this.xhrOpen = XMLHttpRequest.prototype.open;
       this.xhrSend = XMLHttpRequest.prototype.send;
       this.originalFetch = window.fetch.bind(window);
+    }
+    /**
+     * 将相对 URL 转换为完整的 URL
+     */
+    normalizeUrl(url) {
+      try {
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+          return url;
+        }
+        return new URL(url, window.location.href).href;
+      } catch {
+        return url;
+      }
     }
     /**
      * 启动拦截
@@ -189,47 +264,136 @@
      * 拦截 XMLHttpRequest
      */
     interceptXHR() {
-      const self = this;
+      const self2 = this;
       XMLHttpRequest.prototype.open = function(method, url, ...args) {
         this._mockMethod = method;
         this._mockUrl = url.toString();
-        return self.xhrOpen.call(this, method, url, ...args);
+        this._mockRequestId = RequestRecorder.generateId();
+        this._mockRequestTime = Date.now();
+        return self2.xhrOpen.call(this, method, url, ...args);
       };
       XMLHttpRequest.prototype.send = function(body) {
         const xhr = this;
-        const url = xhr._mockUrl;
+        const rawUrl = xhr._mockUrl;
         const method = xhr._mockMethod;
-        const rule = self.manager.findMatch(url);
+        const requestId = xhr._mockRequestId;
+        const requestTime = xhr._mockRequestTime;
+        const url = self2.normalizeUrl(rawUrl);
+        self2.recorder.addRequest({
+          id: requestId,
+          method,
+          url,
+          body: body?.toString(),
+          type: "XHR",
+          mocked: false,
+          timestamp: requestTime
+        });
+        const rule = self2.manager.findMatch(url);
         if (rule) {
           console.log(`[MockMonkey] XHR 拦截: ${method} ${url}`);
-          self.mockXHR(this, rule);
+          self2.recorder.updateRequest(requestId, {
+            mocked: true,
+            ruleId: rule.id,
+            status: rule.options.status || 200,
+            response: rule.response,
+            duration: rule.options.delay || 0
+          });
+          self2.mockXHR(this, rule, requestId);
           return;
         }
-        return self.xhrSend.call(this, body);
+        const originalOnReadyStateChange = xhr.onreadystatechange;
+        xhr.onreadystatechange = function(...args) {
+          if (xhr.readyState === XMLHttpRequest.DONE) {
+            const duration = Date.now() - requestTime;
+            self2.recorder.updateRequest(requestId, {
+              status: xhr.status,
+              duration
+            });
+          }
+          if (originalOnReadyStateChange) {
+            return originalOnReadyStateChange.call(this, ...args);
+          }
+        };
+        const originalOnLoad = xhr.onload;
+        xhr.onload = function(...args) {
+          const duration = Date.now() - requestTime;
+          let response;
+          try {
+            response = JSON.parse(xhr.responseText);
+          } catch {
+            response = xhr.responseText;
+          }
+          self2.recorder.updateRequest(requestId, {
+            status: xhr.status,
+            response,
+            duration
+          });
+          if (originalOnLoad) {
+            return originalOnLoad.call(this, ...args);
+          }
+        };
+        return self2.xhrSend.call(this, body);
       };
     }
     /**
      * 拦截 Fetch
      */
     interceptFetch() {
-      const self = this;
+      const self2 = this;
       window.fetch = function(input, init) {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-        const rule = self.manager.findMatch(url);
+        const rawUrl = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const url = self2.normalizeUrl(rawUrl);
+        const requestId = RequestRecorder.generateId();
+        const requestTime = Date.now();
+        const method = init?.method || "GET";
+        self2.recorder.addRequest({
+          id: requestId,
+          method,
+          url,
+          body: init?.body?.toString(),
+          type: "Fetch",
+          mocked: false,
+          timestamp: requestTime
+        });
+        const rule = self2.manager.findMatch(url);
         if (rule) {
-          const method = init?.method || "GET";
           console.log(`[MockMonkey] Fetch 拦截: ${method} ${url}`);
-          return self.mockFetch(rule);
+          self2.recorder.updateRequest(requestId, {
+            mocked: true,
+            ruleId: rule.id,
+            status: rule.options.status || 200,
+            response: rule.response,
+            duration: rule.options.delay || 0
+          });
+          return self2.mockFetch(rule, requestId);
         }
-        return self.originalFetch(input, init);
+        return self2.originalFetch(input, init).then((response) => {
+          const duration = Date.now() - requestTime;
+          const clonedResponse = response.clone();
+          clonedResponse.json().catch(() => clonedResponse.text()).then((data) => {
+            self2.recorder.updateRequest(requestId, {
+              status: response.status,
+              response: data,
+              duration
+            });
+          }).catch(() => {
+            self2.recorder.updateRequest(requestId, {
+              status: response.status,
+              duration
+            });
+          });
+          return response;
+        });
       };
     }
     /**
      * 模拟 XHR 响应
      */
-    mockXHR(xhr, rule) {
+    mockXHR(xhr, rule, requestId) {
       const delay = rule.options.delay || 0;
+      const requestTime = Date.now();
       setTimeout(() => {
+        const duration = Date.now() - requestTime;
         Object.defineProperty(xhr, "readyState", {
           value: 4,
           writable: false,
@@ -251,6 +415,7 @@
           writable: false,
           configurable: true
         });
+        self.recorder.updateRequest(requestId, { duration });
         const isSuccess = (rule.options.status || 200) >= 200 && (rule.options.status || 200) < 300;
         const eventType = isSuccess ? "load" : "error";
         xhr.dispatchEvent(new Event(eventType));
@@ -263,11 +428,14 @@
     /**
      * 模拟 Fetch 响应
      */
-    mockFetch(rule) {
+    mockFetch(rule, requestId) {
       return new Promise((resolve) => {
         const delay = rule.options.delay || 0;
+        const requestTime = Date.now();
         setTimeout(() => {
+          const duration = Date.now() - requestTime;
           const headers = rule.options.headers || { "Content-Type": "application/json" };
+          this.recorder.updateRequest(requestId, { duration });
           resolve(
             new Response(JSON.stringify(rule.response), {
               status: rule.options.status || 200,
@@ -284,6 +452,7 @@
       this.container = null;
       this.shadowRoot = null;
       this.isVisible = false;
+      this.networkRequests = [];
     }
     /**
      * 初始化面板
@@ -334,6 +503,7 @@
 
       <div class="mm-tabs">
         <button class="mm-tab mm-tab--active" data-tab="rules">规则列表</button>
+        <button class="mm-tab" data-tab="requests">网络请求</button>
         <button class="mm-tab" data-tab="add">添加规则</button>
       </div>
 
@@ -345,6 +515,14 @@
             <button class="mm-btn mm-btn--small" data-action="import">导入</button>
           </div>
           <div class="mm-rules-list" data-rules-list></div>
+        </div>
+
+        <div class="mm-tab-content" data-content="requests">
+          <div class="mm-rules-header">
+            <span class="mm-rules-count">0 条请求</span>
+            <button class="mm-btn mm-btn--small" data-action="clear-requests">清空</button>
+          </div>
+          <div class="mm-requests-list" data-requests-list></div>
         </div>
 
         <div class="mm-tab-content" data-content="add">
@@ -434,6 +612,9 @@
           const tabName = target.dataset.tab;
           if (tabName) this.switchTab(tabName);
         });
+      });
+      this.shadowRoot.querySelector('[data-action="clear-requests"]')?.addEventListener("click", () => {
+        this.updateNetworkRequests([]);
       });
       this.shadowRoot.querySelector('[data-action="add-rule"]')?.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -543,6 +724,51 @@
           if (id) this.onDeleteRule(id);
         });
       });
+    }
+    /**
+     * 更新网络请求列表
+     */
+    updateNetworkRequests(requests) {
+      this.networkRequests = requests;
+      if (!this.shadowRoot) return;
+      const listContainer = this.shadowRoot.querySelector("[data-requests-list]");
+      const countEl = this.shadowRoot.querySelector('[data-content="requests"] .mm-rules-count');
+      if (!listContainer) return;
+      if (countEl) {
+        countEl.textContent = `${requests.length} 条请求`;
+      }
+      if (requests.length === 0) {
+        listContainer.innerHTML = `
+        <div class="mm-empty">
+          <p>暂无网络请求</p>
+          <p class="mm-hint">发起请求后会在此显示</p>
+        </div>
+      `;
+        return;
+      }
+      listContainer.innerHTML = requests.map(
+        (req) => `
+      <div class="mm-request-item ${req.mocked ? "mm-request-item--mocked" : ""}">
+        <div class="mm-request-header">
+          <span class="mm-request-method" data-method="${req.method}">${req.method}</span>
+          <span class="mm-request-url">${this.escapeHtml(req.url)}</span>
+          <span class="mm-request-type">${req.type}</span>
+          ${req.mocked ? '<span class="mm-badge mm-badge--mocked">MOCK</span>' : ""}
+        </div>
+        <div class="mm-request-meta">
+          <span class="mm-request-status" data-status="${req.status ? Math.floor(req.status / 100).toString() : ""}">${req.status ?? "PENDING"}</span>
+          <span class="mm-request-duration">${req.duration ? `${req.duration}ms` : "-"}</span>
+          <span class="mm-request-time">${new Date(req.timestamp).toLocaleTimeString()}</span>
+        </div>
+        ${req.response !== void 0 ? `
+          <details class="mm-request-details">
+            <summary class="mm-request-summary">响应数据</summary>
+            <pre class="mm-request-response">${this.escapeHtml(JSON.stringify(req.response, null, 2))}</pre>
+          </details>
+        ` : ""}
+      </div>
+    `
+      ).join("");
     }
     /**
      * 显示面板
@@ -916,6 +1142,155 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       }
 
+      .mm-requests-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .mm-request-item {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+
+      .mm-request-item:hover {
+        border-color: #d1d5db;
+      }
+
+      .mm-request-item--mocked {
+        background: #f0fdf4;
+        border-color: #86efac;
+      }
+
+      .mm-request-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        flex-wrap: wrap;
+      }
+
+      .mm-request-method {
+        font-weight: 600;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #e5e7eb;
+        color: #374151;
+        min-width: 45px;
+        text-align: center;
+      }
+
+      .mm-request-method[data-method="GET"] {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .mm-request-method[data-method="POST"] {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+
+      .mm-request-method[data-method="PUT"] {
+        background: #fef3c7;
+        color: #d97706;
+      }
+
+      .mm-request-method[data-method="DELETE"] {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+
+      .mm-request-url {
+        flex: 1;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 12px;
+        word-break: break-all;
+        color: #374151;
+      }
+
+      .mm-request-type {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #e5e7eb;
+        color: #6b7280;
+        font-weight: 500;
+      }
+
+      .mm-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+
+      .mm-badge--mocked {
+        background: #22c55e;
+        color: #fff;
+      }
+
+      .mm-request-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 11px;
+        color: #6b7280;
+      }
+
+      .mm-request-status {
+        font-weight: 500;
+      }
+
+      .mm-request-status[data-status="2"] {
+        color: #16a34a;
+      }
+
+      .mm-request-status[data-status="3"] {
+        color: #d97706;
+      }
+
+      .mm-request-status[data-status="4"],
+      .mm-request-status[data-status="5"] {
+        color: #dc2626;
+      }
+
+      .mm-request-duration {
+        font-family: 'Monaco', 'Menlo', monospace;
+      }
+
+      .mm-request-details {
+        margin-top: 8px;
+      }
+
+      .mm-request-summary {
+        cursor: pointer;
+        font-size: 11px;
+        color: #6b7280;
+        user-select: none;
+        padding: 4px 0;
+      }
+
+      .mm-request-summary:hover {
+        color: #374151;
+      }
+
+      .mm-request-response {
+        margin: 4px 0 0 0;
+        padding: 8px 12px;
+        background: #fff;
+        border-radius: 4px;
+        font-size: 11px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        color: #374151;
+        overflow-x: auto;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
       .mm-hidden {
         display: none;
       }
@@ -936,8 +1311,9 @@
   }
   class MockMonkey {
     constructor() {
+      this.recorder = new RequestRecorder();
       this.manager = new MockManager();
-      this.interceptor = new Interceptor(this.manager);
+      this.interceptor = new Interceptor(this.manager, this.recorder);
       this.panel = new PanelWithCallbacks(
         (rule) => this.handleAddRule(rule),
         {
@@ -945,6 +1321,9 @@
           onDelete: (id) => this.handleDeleteRule(id)
         }
       );
+      this.recorder.subscribe((requests) => {
+        this.panel.updateNetworkRequests(requests);
+      });
     }
     /**
      * 获取单例实例
@@ -1036,6 +1415,19 @@
         console.log(`  ${rule.enabled ? "✓" : "✗"} ${rule.pattern}`, rule);
       });
     },
-    manager: MockMonkey.getInstance()["manager"]
+    listRequests: () => {
+      const recorder = MockMonkey.getInstance()["recorder"];
+      console.log("[MockMonkey] 网络请求记录:");
+      recorder.getRequests().forEach((req) => {
+        console.log(`  ${req.mocked ? "🟢 MOCK" : "⚪ REAL"} ${req.method} ${req.url}`, req);
+      });
+    },
+    clearRequests: () => {
+      const recorder = MockMonkey.getInstance()["recorder"];
+      recorder.clear();
+      console.log("[MockMonkey] 网络请求记录已清空");
+    },
+    manager: MockMonkey.getInstance()["manager"],
+    recorder: MockMonkey.getInstance()["recorder"]
   };
 })();

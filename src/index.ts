@@ -1,5 +1,6 @@
 import { MockManager } from './core/MockManager';
 import { Interceptor } from './core/Interceptor';
+import { RequestRecorder } from './core/RequestRecorder';
 import { PanelWithCallbacks, type RuleItem, type RuleFormData } from './ui/Panel';
 
 /**
@@ -11,10 +12,12 @@ class MockMonkey {
   private manager: MockManager;
   private interceptor: Interceptor;
   private panel: PanelWithCallbacks;
+  private recorder: RequestRecorder;
 
   private constructor() {
+    this.recorder = new RequestRecorder();
     this.manager = new MockManager();
-    this.interceptor = new Interceptor(this.manager);
+    this.interceptor = new Interceptor(this.manager, this.recorder);
     this.panel = new PanelWithCallbacks(
       (rule) => this.handleAddRule(rule),
       {
@@ -22,6 +25,11 @@ class MockMonkey {
         onDelete: (id) => this.handleDeleteRule(id)
       }
     );
+
+    // 订阅请求变化，更新面板
+    this.recorder.subscribe((requests) => {
+      this.panel.updateNetworkRequests(requests);
+    });
   }
 
   /**
@@ -118,7 +126,10 @@ declare global {
       remove: (pattern: string | RegExp) => void;
       clear: () => void;
       list: () => void;
+      listRequests: () => void;
+      clearRequests: () => void;
       manager: MockManager;
+      recorder: RequestRecorder;
     };
   }
 }
@@ -143,5 +154,18 @@ window.mockMonkey = {
       console.log(`  ${rule.enabled ? '✓' : '✗'} ${rule.pattern}`, rule);
     });
   },
-  manager: MockMonkey.getInstance()['manager'] as MockManager
+  listRequests: () => {
+    const recorder = MockMonkey.getInstance()['recorder'] as RequestRecorder;
+    console.log('[MockMonkey] 网络请求记录:');
+    recorder.getRequests().forEach((req) => {
+      console.log(`  ${req.mocked ? '🟢 MOCK' : '⚪ REAL'} ${req.method} ${req.url}`, req);
+    });
+  },
+  clearRequests: () => {
+    const recorder = MockMonkey.getInstance()['recorder'] as RequestRecorder;
+    recorder.clear();
+    console.log('[MockMonkey] 网络请求记录已清空');
+  },
+  manager: MockMonkey.getInstance()['manager'] as MockManager,
+  recorder: MockMonkey.getInstance()['recorder'] as RequestRecorder
 };

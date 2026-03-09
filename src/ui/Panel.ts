@@ -1,3 +1,5 @@
+import type { NetworkRequest } from '../types';
+
 /**
  * UI 面板管理器
  */
@@ -5,6 +7,7 @@ export class Panel {
   private container: HTMLElement | null = null;
   private shadowRoot: ShadowRoot | null = null;
   private isVisible = false;
+  private networkRequests: NetworkRequest[] = [];
 
   constructor(private onAddRule: (rule: RuleFormData) => void) {}
 
@@ -68,6 +71,7 @@ export class Panel {
 
       <div class="mm-tabs">
         <button class="mm-tab mm-tab--active" data-tab="rules">规则列表</button>
+        <button class="mm-tab" data-tab="requests">网络请求</button>
         <button class="mm-tab" data-tab="add">添加规则</button>
       </div>
 
@@ -79,6 +83,14 @@ export class Panel {
             <button class="mm-btn mm-btn--small" data-action="import">导入</button>
           </div>
           <div class="mm-rules-list" data-rules-list></div>
+        </div>
+
+        <div class="mm-tab-content" data-content="requests">
+          <div class="mm-rules-header">
+            <span class="mm-rules-count">0 条请求</span>
+            <button class="mm-btn mm-btn--small" data-action="clear-requests">清空</button>
+          </div>
+          <div class="mm-requests-list" data-requests-list></div>
         </div>
 
         <div class="mm-tab-content" data-content="add">
@@ -176,6 +188,11 @@ export class Panel {
         const tabName = target.dataset.tab;
         if (tabName) this.switchTab(tabName);
       });
+    });
+
+    // 清空网络请求
+    this.shadowRoot.querySelector('[data-action="clear-requests"]')?.addEventListener('click', () => {
+      this.updateNetworkRequests([]);
     });
 
     // 添加规则表单
@@ -310,6 +327,58 @@ export class Panel {
         if (id) this.onDeleteRule(id);
       });
     });
+  }
+
+  /**
+   * 更新网络请求列表
+   */
+  updateNetworkRequests(requests: NetworkRequest[]): void {
+    this.networkRequests = requests;
+    if (!this.shadowRoot) return;
+
+    const listContainer = this.shadowRoot.querySelector('[data-requests-list]');
+    const countEl = this.shadowRoot.querySelector('[data-content="requests"] .mm-rules-count');
+    if (!listContainer) return;
+
+    if (countEl) {
+      countEl.textContent = `${requests.length} 条请求`;
+    }
+
+    if (requests.length === 0) {
+      listContainer.innerHTML = `
+        <div class="mm-empty">
+          <p>暂无网络请求</p>
+          <p class="mm-hint">发起请求后会在此显示</p>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = requests
+      .map(
+        (req) => `
+      <div class="mm-request-item ${req.mocked ? 'mm-request-item--mocked' : ''}">
+        <div class="mm-request-header">
+          <span class="mm-request-method" data-method="${req.method}">${req.method}</span>
+          <span class="mm-request-url">${this.escapeHtml(req.url)}</span>
+          <span class="mm-request-type">${req.type}</span>
+          ${req.mocked ? '<span class="mm-badge mm-badge--mocked">MOCK</span>' : ''}
+        </div>
+        <div class="mm-request-meta">
+          <span class="mm-request-status" data-status="${req.status ? Math.floor(req.status / 100).toString() : ''}">${req.status ?? 'PENDING'}</span>
+          <span class="mm-request-duration">${req.duration ? `${req.duration}ms` : '-'}</span>
+          <span class="mm-request-time">${new Date(req.timestamp).toLocaleTimeString()}</span>
+        </div>
+        ${req.response !== undefined ? `
+          <details class="mm-request-details">
+            <summary class="mm-request-summary">响应数据</summary>
+            <pre class="mm-request-response">${this.escapeHtml(JSON.stringify(req.response, null, 2))}</pre>
+          </details>
+        ` : ''}
+      </div>
+    `
+      )
+      .join('');
   }
 
   /**
@@ -687,6 +756,155 @@ export class Panel {
       .mm-toggle-btn:hover {
         transform: scale(1.1);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .mm-requests-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .mm-request-item {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+
+      .mm-request-item:hover {
+        border-color: #d1d5db;
+      }
+
+      .mm-request-item--mocked {
+        background: #f0fdf4;
+        border-color: #86efac;
+      }
+
+      .mm-request-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 6px;
+        flex-wrap: wrap;
+      }
+
+      .mm-request-method {
+        font-weight: 600;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #e5e7eb;
+        color: #374151;
+        min-width: 45px;
+        text-align: center;
+      }
+
+      .mm-request-method[data-method="GET"] {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .mm-request-method[data-method="POST"] {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+
+      .mm-request-method[data-method="PUT"] {
+        background: #fef3c7;
+        color: #d97706;
+      }
+
+      .mm-request-method[data-method="DELETE"] {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+
+      .mm-request-url {
+        flex: 1;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 12px;
+        word-break: break-all;
+        color: #374151;
+      }
+
+      .mm-request-type {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #e5e7eb;
+        color: #6b7280;
+        font-weight: 500;
+      }
+
+      .mm-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 500;
+      }
+
+      .mm-badge--mocked {
+        background: #22c55e;
+        color: #fff;
+      }
+
+      .mm-request-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 11px;
+        color: #6b7280;
+      }
+
+      .mm-request-status {
+        font-weight: 500;
+      }
+
+      .mm-request-status[data-status="2"] {
+        color: #16a34a;
+      }
+
+      .mm-request-status[data-status="3"] {
+        color: #d97706;
+      }
+
+      .mm-request-status[data-status="4"],
+      .mm-request-status[data-status="5"] {
+        color: #dc2626;
+      }
+
+      .mm-request-duration {
+        font-family: 'Monaco', 'Menlo', monospace;
+      }
+
+      .mm-request-details {
+        margin-top: 8px;
+      }
+
+      .mm-request-summary {
+        cursor: pointer;
+        font-size: 11px;
+        color: #6b7280;
+        user-select: none;
+        padding: 4px 0;
+      }
+
+      .mm-request-summary:hover {
+        color: #374151;
+      }
+
+      .mm-request-response {
+        margin: 4px 0 0 0;
+        padding: 8px 12px;
+        background: #fff;
+        border-radius: 4px;
+        font-size: 11px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        color: #374151;
+        overflow-x: auto;
+        max-height: 200px;
+        overflow-y: auto;
       }
 
       .mm-hidden {

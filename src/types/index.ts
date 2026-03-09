@@ -53,3 +53,31 @@ interface FetchRequestInfo {
   url: string | Request;
   options?: RequestInit;
 }
+
+/**
+ * 网络请求记录
+ */
+export interface NetworkRequest {
+  /** 请求 ID */
+  id: string;
+  /** 请求方法 */
+  method: string;
+  /** 请求 URL */
+  url: string;
+  /** 请求体 */
+  body?: string;
+  /** 请求类型 */
+  type: 'XHR' | 'Fetch';
+  /** 是否被 Mock */
+  mocked: boolean;
+  /** 匹配的规则 ID（如果被 Mock） */
+  ruleId?: string;
+  /** 响应状态码 */
+  status?: number;
+  /** 响应数据 */
+  response?: unknown;
+  /** 请求时间戳 */
+  timestamp: number;
+  /** 请求耗时（毫秒） */
+  duration?: number;
+}
