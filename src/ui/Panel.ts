@@ -484,6 +484,14 @@ export class Panel {
       e.preventDefault();
       this.handleAddRule(e);
     });
+
+    // 阻止面板内的滚轮事件传播到主页面
+    const panel = this.shadowRoot.querySelector('.mm-panel');
+    if (panel) {
+      panel.addEventListener('wheel', (e: WheelEvent) => {
+        e.stopPropagation();
+      }, { capture: true, passive: true });
+    }
   }
 
   /**
@@ -881,6 +889,7 @@ export class Panel {
         flex: 1;
         overflow-y: auto;
         padding: 20px;
+        overscroll-behavior: contain;
       }
 
       .mm-tab-content--active {
