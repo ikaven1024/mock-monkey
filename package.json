@@ -1,0 +1,24 @@
+{
+  "name": "mock-monkey",
+  "version": "1.0.0",
+  "description": "浏览器本地接口 Mock 的 Tampermonkey 脚本",
+  "main": "mock-monkey.user.js",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "tampermonkey",
+    "mock",
+    "api",
+    "browser"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}

@@ -1,0 +1,747 @@
+/**
+ * UI 面板管理器
+ */
+export class Panel {
+  private container: HTMLElement | null = null;
+  private shadowRoot: ShadowRoot | null = null;
+  private isVisible = false;
+
+  constructor(private onAddRule: (rule: RuleFormData) => void) {}
+
+  /**
+   * 初始化面板
+   */
+  init(): void {
+    this.container = document.createElement('div');
+    this.container.id = 'mock-monkey-container';
+    this.shadowRoot = this.container.attachShadow({ mode: 'open' });
+
+    // 先添加内容和样式
+    this.attachStyles();
+    this.createContent();
+    this.bindEvents();
+
+    // 等待 body 存在后添加到页面
+    this.ensureBody().then(() => {
+      if (document.body) {
+        document.body.appendChild(this.container);
+        console.log('[MockMonkey] 面板容器已添加到页面');
+      } else {
+        console.error('[MockMonkey] document.body 仍然不存在');
+      }
+      // 创建切换按钮
+      this.createToggleButton();
+    });
+  }
+
+  /**
+   * 创建容器
+   */
+  private createContainer(): void {
+    // 已合并到 init() 方法中
+  }
+
+  /**
+   * 附加样式
+   */
+  private attachStyles(): void {
+    if (!this.shadowRoot) return;
+
+    const style = document.createElement('style');
+    style.textContent = this.getStyles();
+    this.shadowRoot.appendChild(style);
+  }
+
+  /**
+   * 创建面板内容
+   */
+  private createContent(): void {
+    if (!this.shadowRoot) return;
+
+    const panel = document.createElement('div');
+    panel.className = 'mm-panel';
+    panel.innerHTML = `
+      <div class="mm-header">
+        <h2 class="mm-title">🐵 MockMonkey</h2>
+        <button class="mm-close-btn" data-action="close">×</button>
+      </div>
+
+      <div class="mm-tabs">
+        <button class="mm-tab mm-tab--active" data-tab="rules">规则列表</button>
+        <button class="mm-tab" data-tab="add">添加规则</button>
+      </div>
+
+      <div class="mm-content">
+        <div class="mm-tab-content mm-tab-content--active" data-content="rules">
+          <div class="mm-rules-header">
+            <span class="mm-rules-count">0 条规则</span>
+            <button class="mm-btn mm-btn--small" data-action="export">导出</button>
+            <button class="mm-btn mm-btn--small" data-action="import">导入</button>
+          </div>
+          <div class="mm-rules-list" data-rules-list></div>
+        </div>
+
+        <div class="mm-tab-content" data-content="add">
+          <form class="mm-form" data-action="add-rule">
+            <div class="mm-form-group">
+              <label class="mm-label">URL 模式 *</label>
+              <input class="mm-input" name="pattern" placeholder="/api/user 或 /\\/api\\/user\\/\\d+/" required>
+              <span class="mm-hint">支持字符串或正则表达式（格式：/pattern/flags）</span>
+            </div>
+
+            <div class="mm-form-group">
+              <label class="mm-label">响应数据 (JSON) *</label>
+              <textarea class="mm-textarea" name="response" rows="6" placeholder='{"code": 200, "data": {}}' required></textarea>
+            </div>
+
+            <div class="mm-form-row">
+              <div class="mm-form-group">
+                <label class="mm-label">延迟 (ms)</label>
+                <input class="mm-input" type="number" name="delay" value="0" min="0">
+              </div>
+              <div class="mm-form-group">
+                <label class="mm-label">状态码</label>
+                <input class="mm-input" type="number" name="status" value="200" min="100" max="599">
+              </div>
+            </div>
+
+            <div class="mm-form-actions">
+              <button type="submit" class="mm-btn mm-btn--primary">添加规则</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <input type="file" class="mm-hidden" data-action="import-file" accept=".json">
+    `;
+
+    this.shadowRoot.appendChild(panel);
+    this.bindEvents();
+  }
+
+  /**
+   * 创建切换按钮
+   */
+  private createToggleButton(): void {
+    this.ensureBody().then(() => {
+      const btn = document.createElement('button');
+      btn.className = 'mm-toggle-btn';
+      btn.innerHTML = '🐵';
+      btn.title = 'MockMonkey';
+      btn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: #4f46e5; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4); z-index: 999998; display: flex; align-items: center; justify-content: center;';
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('[MockMonkey] 按钮被点击');
+        this.toggle();
+      });
+      document.body!.appendChild(btn);
+      console.log('[MockMonkey] 切换按钮已添加到页面');
+    });
+  }
+
+  /**
+   * 确保 body 元素存在
+   */
+  private ensureBody(): Promise<void> {
+    return new Promise((resolve) => {
+      if (document.body) {
+        resolve();
+      } else {
+        const checkBody = () => {
+          if (document.body) {
+            resolve();
+          } else {
+            setTimeout(checkBody, 10);
+          }
+        };
+        checkBody();
+      }
+    });
+  }
+
+  /**
+   * 绑定事件
+   */
+  private bindEvents(): void {
+    if (!this.shadowRoot) return;
+
+    // 关闭按钮
+    this.shadowRoot.querySelector('[data-action="close"]')?.addEventListener('click', () => this.hide());
+
+    // Tab 切换
+    this.shadowRoot.querySelectorAll('.mm-tab').forEach((tab) => {
+      tab.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        const tabName = target.dataset.tab;
+        if (tabName) this.switchTab(tabName);
+      });
+    });
+
+    // 添加规则表单
+    this.shadowRoot.querySelector('[data-action="add-rule"]')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.handleAddRule(e);
+    });
+  }
+
+  /**
+   * 切换 Tab
+   */
+  private switchTab(tabName: string): void {
+    if (!this.shadowRoot) return;
+
+    // 更新 tab 样式
+    this.shadowRoot.querySelectorAll('.mm-tab').forEach((tab) => {
+      const isActive = (tab as HTMLElement).dataset.tab === tabName;
+      tab.classList.toggle('mm-tab--active', isActive);
+    });
+
+    // 更新内容显示
+    this.shadowRoot.querySelectorAll('.mm-tab-content').forEach((content) => {
+      const isActive = (content as HTMLElement).dataset.content === tabName;
+      content.classList.toggle('mm-tab-content--active', isActive);
+    });
+  }
+
+  /**
+   * 处理添加规则
+   */
+  private handleAddRule(e: Event): void {
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const pattern = formData.get('pattern') as string;
+    const responseStr = formData.get('response') as string;
+    const delay = parseInt(formData.get('delay') as string) || 0;
+    const status = parseInt(formData.get('status') as string) || 200;
+
+    // 解析 pattern
+    let parsedPattern: string | RegExp = pattern;
+    if (pattern.startsWith('/')) {
+      try {
+        const match = pattern.match(/^\/(.+)\/([gimuy]*)$/);
+        if (match) {
+          parsedPattern = new RegExp(match[1], match[2]);
+        }
+      } catch (err) {
+        alert('正则表达式格式错误');
+        return;
+      }
+    }
+
+    // 解析响应
+    let response: unknown;
+    try {
+      response = JSON.parse(responseStr);
+    } catch (err) {
+      alert('响应数据 JSON 格式错误');
+      return;
+    }
+
+    this.onAddRule({
+      pattern: parsedPattern,
+      response,
+      options: { delay, status }
+    });
+
+    form.reset();
+    this.switchTab('rules');
+  }
+
+  /**
+   * 更新规则列表
+   */
+  updateRules(rules: RuleItem[]): void {
+    if (!this.shadowRoot) return;
+
+    const listContainer = this.shadowRoot.querySelector('[data-rules-list]');
+    const countEl = this.shadowRoot.querySelector('.mm-rules-count');
+    if (!listContainer) return;
+
+    if (countEl) {
+      countEl.textContent = `${rules.length} 条规则`;
+    }
+
+    if (rules.length === 0) {
+      listContainer.innerHTML = `
+        <div class="mm-empty">
+          <p>暂无 Mock 规则</p>
+          <p class="mm-hint">点击"添加规则"开始配置</p>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = rules
+      .map(
+        (rule) => `
+      <div class="mm-rule-item ${rule.enabled ? '' : 'mm-rule-item--disabled'}">
+        <div class="mm-rule-header">
+          <span class="mm-rule-pattern">${this.escapeHtml(rule.patternStr)}</span>
+          <div class="mm-rule-actions">
+            <button class="mm-btn-icon" data-action="toggle" data-id="${rule.id}" title="${rule.enabled ? '禁用' : '启用'}">
+              ${rule.enabled ? '🟢' : '⚫'}
+            </button>
+            <button class="mm-btn-icon" data-action="delete" data-id="${rule.id}" title="删除">🗑️</button>
+          </div>
+        </div>
+        <div class="mm-rule-meta">
+          <span>状态: ${rule.status}</span>
+          <span>延迟: ${rule.delay}ms</span>
+        </div>
+        <pre class="mm-rule-response">${this.escapeHtml(JSON.stringify(rule.response, null, 2))}</pre>
+      </div>
+    `
+      )
+      .join('');
+
+    // 绑定规则项事件
+    listContainer.querySelectorAll('[data-action="toggle"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (id) this.onToggleRule(id);
+      });
+    });
+
+    listContainer.querySelectorAll('[data-action="delete"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (id) this.onDeleteRule(id);
+      });
+    });
+  }
+
+  /**
+   * 显示面板
+   */
+  show(): void {
+    console.log('[MockMonkey] show() 被调用', { container: !!this.container, shadowRoot: !!this.shadowRoot });
+    if (this.container) {
+      this.isVisible = true;
+      this.container.classList.add('mm-panel--visible');
+      console.log('[MockMonkey] 已添加 mm-panel--visible 类');
+      // 使用 shadowRoot 查询面板元素
+      const panel = this.shadowRoot?.querySelector('.mm-panel') as HTMLElement;
+      if (panel) {
+        panel.style.display = 'flex';
+        panel.style.opacity = '1';
+        panel.style.pointerEvents = 'auto';
+        console.log('[MockMonkey] 面板样式已应用');
+      } else {
+        console.error('[MockMonkey] 找不到 .mm-panel 元素');
+      }
+    }
+  }
+
+  /**
+   * 隐藏面板
+   */
+  hide(): void {
+    console.log('[MockMonkey] hide() 被调用');
+    if (this.container) {
+      this.isVisible = false;
+      this.container.classList.remove('mm-panel--visible');
+      const panel = this.shadowRoot?.querySelector('.mm-panel') as HTMLElement;
+      if (panel) {
+        panel.style.opacity = '0';
+        panel.style.pointerEvents = 'none';
+      }
+    }
+  }
+
+  /**
+   * 切换显示状态
+   */
+  toggle(): void {
+    console.log('[MockMonkey] toggle() 被调用', { isVisible: this.isVisible });
+    if (this.isVisible) {
+      this.hide();
+    } else {
+      this.show();
+    }
+  }
+
+  /**
+   * HTML 转义
+   */
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /**
+   * 获取样式
+   */
+  private getStyles(): string {
+    return `
+      :host {
+        all: initial;
+      }
+
+      .mm-panel {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 600px;
+        max-width: 90vw;
+        max-height: 80vh;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 14px;
+        color: #333;
+        z-index: 999999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+      }
+
+      .mm-panel--visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .mm-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .mm-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .mm-close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .mm-close-btn:hover {
+        background: #f5f5f5;
+      }
+
+      .mm-tabs {
+        display: flex;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .mm-tab {
+        flex: 1;
+        padding: 12px;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        transition: all 0.2s;
+      }
+
+      .mm-tab:hover {
+        color: #333;
+        background: #fafafa;
+      }
+
+      .mm-tab--active {
+        color: #4f46e5;
+        border-bottom-color: #4f46e5;
+      }
+
+      .mm-content {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .mm-tab-content {
+        display: none;
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+      }
+
+      .mm-tab-content--active {
+        display: block;
+      }
+
+      .mm-rules-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .mm-rules-count {
+        font-weight: 500;
+        color: #666;
+      }
+
+      .mm-rules-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .mm-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: #999;
+      }
+
+      .mm-rule-item {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+        transition: all 0.2s;
+      }
+
+      .mm-rule-item:hover {
+        border-color: #d1d5db;
+      }
+
+      .mm-rule-item--disabled {
+        opacity: 0.6;
+      }
+
+      .mm-rule-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .mm-rule-pattern {
+        font-weight: 500;
+        color: #4f46e5;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 13px;
+      }
+
+      .mm-rule-actions {
+        display: flex;
+        gap: 4px;
+      }
+
+      .mm-rule-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 8px;
+      }
+
+      .mm-rule-response {
+        margin: 0;
+        padding: 8px 12px;
+        background: #fff;
+        border-radius: 4px;
+        font-size: 12px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        color: #374151;
+        overflow-x: auto;
+        max-height: 150px;
+        overflow-y: auto;
+      }
+
+      .mm-form-group {
+        margin-bottom: 16px;
+      }
+
+      .mm-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #374151;
+      }
+
+      .mm-input,
+      .mm-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+      }
+
+      .mm-input:focus,
+      .mm-textarea:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      }
+
+      .mm-textarea {
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 13px;
+        resize: vertical;
+      }
+
+      .mm-hint {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+        color: #6b7280;
+      }
+
+      .mm-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .mm-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 8px;
+      }
+
+      .mm-btn {
+        padding: 10px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .mm-btn:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+      }
+
+      .mm-btn--primary {
+        background: #4f46e5;
+        color: #fff;
+        border-color: #4f46e5;
+      }
+
+      .mm-btn--primary:hover {
+        background: #4338ca;
+        border-color: #4338ca;
+      }
+
+      .mm-btn--small {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      .mm-btn-icon {
+        background: none;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+
+      .mm-btn-icon:hover {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .mm-toggle-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #4f46e5;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        z-index: 999998;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .mm-toggle-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5);
+      }
+
+      .mm-hidden {
+        display: none;
+      }
+    `;
+  }
+}
+
+/**
+ * 规则表单数据
+ */
+export interface RuleFormData {
+  pattern: string | RegExp;
+  response: unknown;
+  options: {
+    delay: number;
+    status: number;
+  };
+}
+
+/**
+ * 规则列表项
+ */
+export interface RuleItem {
+  id: string;
+  patternStr: string;
+  response: unknown;
+  enabled: boolean;
+  delay: number;
+  status: number;
+}
+
+/**
+ * 规则操作回调
+ */
+export interface RuleCallbacks {
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+// 扩展 Panel 类以支持回调
+export class PanelWithCallbacks extends Panel {
+  constructor(
+    onAddRule: (rule: RuleFormData) => void,
+    private callbacks: RuleCallbacks
+  ) {
+    super(onAddRule);
+  }
+
+  onToggleRule(id: string): void {
+    this.callbacks.onToggle(id);
+  }
+
+  onDeleteRule(id: string): void {
+    this.callbacks.onDelete(id);
+  }
+}
