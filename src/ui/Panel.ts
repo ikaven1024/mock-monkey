@@ -84,8 +84,8 @@ export class Panel {
 
       <div class="mm-tabs">
         <button class="mm-tab mm-tab--active" data-tab="rules">规则列表</button>
-        <button class="mm-tab" data-tab="requests">网络请求</button>
         <button class="mm-tab" data-tab="add">添加规则</button>
+        <button class="mm-tab" data-tab="requests">网络请求</button>
       </div>
 
       <div class="mm-content">
@@ -96,14 +96,6 @@ export class Panel {
             <button class="mm-btn mm-btn--small" data-action="import">导入</button>
           </div>
           <div class="mm-rules-list" data-rules-list></div>
-        </div>
-
-        <div class="mm-tab-content" data-content="requests">
-          <div class="mm-rules-header">
-            <span class="mm-rules-count">0 条请求</span>
-            <button class="mm-btn mm-btn--small" data-action="clear-requests">清空</button>
-          </div>
-          <div class="mm-requests-list" data-requests-list></div>
         </div>
 
         <div class="mm-tab-content" data-content="add">
@@ -134,6 +126,14 @@ export class Panel {
               <button type="submit" class="mm-btn mm-btn--primary">添加规则</button>
             </div>
           </form>
+        </div>
+
+        <div class="mm-tab-content" data-content="requests">
+          <div class="mm-rules-header">
+            <span class="mm-rules-count">0 条请求</span>
+            <button class="mm-btn mm-btn--small" data-action="clear-requests">清空</button>
+          </div>
+          <div class="mm-requests-list" data-requests-list></div>
         </div>
       </div>
 
@@ -579,9 +579,13 @@ export class Panel {
       listContainer.innerHTML = `
         <div class="mm-empty">
           <p>暂无 Mock 规则</p>
-          <p class="mm-hint">点击"添加规则"开始配置</p>
+          <p class="mm-hint">点击<span class="mm-link" data-action="go-to-add">"添加规则"</span>开始配置</p>
         </div>
       `;
+      // 绑定跳转事件
+      listContainer.querySelector('[data-action="go-to-add"]')?.addEventListener('click', () => {
+        this.switchTab('add');
+      });
       return;
     }
 
@@ -1017,6 +1021,16 @@ export class Panel {
         margin-top: 4px;
         font-size: 12px;
         color: #6b7280;
+      }
+
+      .mm-link {
+        color: #4f46e5;
+        cursor: pointer;
+        text-decoration: underline;
+      }
+
+      .mm-link:hover {
+        color: #4338ca;
       }
 
       .mm-form-row {
