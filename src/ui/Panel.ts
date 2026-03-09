@@ -16,7 +16,10 @@ export class Panel {
   private buttonPosition = { x: 20, y: 20 }; // 默认位置 (right, bottom)
   private currentRules: RuleItem[] = []; // 存储当前规则列表用于导出
 
-  constructor(private onAddRule: (rule: RuleFormData) => void) {
+  constructor(
+    private onAddRule: (rule: RuleFormData) => void,
+    private onCreateFromRequest?: (request: NetworkRequest) => void
+  ) {
     // 从 localStorage 加载保存的位置
     this.loadButtonPosition();
   }
@@ -618,6 +621,8 @@ export class Panel {
    */
   updateNetworkRequests(requests: NetworkRequest[]): void {
     this.networkRequests = requests;
+    // 存储请求用于快速创建 mock
+    (this as any).requestsById = new Map(requests.map(r => [r.id, r]));
     if (!this.shadowRoot) return;
 
     const listContainer = this.shadowRoot.querySelector('[data-requests-list]');
@@ -641,7 +646,7 @@ export class Panel {
     listContainer.innerHTML = requests
       .map(
         (req) => `
-      <div class="mm-request-item ${req.mocked ? 'mm-request-item--mocked' : ''}">
+      <div class="mm-request-item ${req.mocked ? 'mm-request-item--mocked' : ''}" data-request-id="${req.id}">
         <div class="mm-request-header">
           <span class="mm-request-method" data-method="${req.method}">${req.method}</span>
           <span class="mm-request-url">${this.escapeHtml(req.url)}</span>
@@ -652,6 +657,9 @@ export class Panel {
           <span class="mm-request-status" data-status="${req.status ? Math.floor(req.status / 100).toString() : ''}">${req.status ?? 'PENDING'}</span>
           <span class="mm-request-duration">${req.duration ? `${req.duration}ms` : '-'}</span>
           <span class="mm-request-time">${new Date(req.timestamp).toLocaleTimeString()}</span>
+          <button class="mm-btn mm-btn--small mm-btn-create-mock" data-action="create-mock" data-request-id="${req.id}" title="创建 Mock 规则">
+            + Mock
+          </button>
         </div>
         ${req.response !== undefined ? `
           <details class="mm-request-details">
@@ -663,6 +671,14 @@ export class Panel {
     `
       )
       .join('');
+
+    // 绑定创建 mock 按钮事件
+    listContainer.querySelectorAll('[data-action="create-mock"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.requestId;
+        if (id) this.handleCreateFromRequest(id);
+      });
+    });
   }
 
   /**
@@ -713,6 +729,39 @@ export class Panel {
     } else {
       this.show();
     }
+  }
+
+  /**
+   * 从网络请求创建 Mock 规则
+   */
+  private handleCreateFromRequest(requestId: string): void {
+    const requestsById = (this as any).requestsById as Map<string, NetworkRequest>;
+    const request = requestsById?.get(requestId);
+    if (!request) return;
+
+    // 触发回调或直接填充表单
+    if (this.onCreateFromRequest) {
+      this.onCreateFromRequest(request);
+    }
+
+    // 填充表单
+    if (!this.shadowRoot) return;
+    const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
+    const responseInput = this.shadowRoot.querySelector('[name="response"]') as HTMLTextAreaElement;
+    const statusInput = this.shadowRoot.querySelector('[name="status"]') as HTMLInputElement;
+
+    if (patternInput) {
+      patternInput.value = request.url;
+    }
+    if (responseInput && request.response !== undefined) {
+      responseInput.value = JSON.stringify(request.response, null, 2);
+    }
+    if (statusInput && request.status) {
+      statusInput.value = request.status.toString();
+    }
+
+    // 切换到添加规则 tab
+    this.switchTab('add');
   }
 
   /**
@@ -1005,6 +1054,21 @@ export class Panel {
         font-size: 12px;
       }
 
+      .mm-btn-create-mock {
+        margin-left: auto;
+        padding: 4px 10px;
+        font-size: 11px;
+        background: #4f46e5;
+        color: #fff;
+        border-color: #4f46e5;
+        white-space: nowrap;
+      }
+
+      .mm-btn-create-mock:hover {
+        background: #4338ca;
+        border-color: #4338ca;
+      }
+
       .mm-btn-icon {
         background: none;
         border: none;
@@ -1234,9 +1298,10 @@ export interface RuleCallbacks {
 export class PanelWithCallbacks extends Panel {
   constructor(
     onAddRule: (rule: RuleFormData) => void,
-    private callbacks: RuleCallbacks
+    private callbacks: RuleCallbacks,
+    onCreateFromRequest?: (request: NetworkRequest) => void
   ) {
-    super(onAddRule);
+    super(onAddRule, onCreateFromRequest);
   }
 
   onToggleRule(id: string): void {

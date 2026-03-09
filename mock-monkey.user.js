@@ -448,8 +448,9 @@
   }
   class Panel {
     // 存储当前规则列表用于导出
-    constructor(onAddRule) {
+    constructor(onAddRule, onCreateFromRequest) {
       this.onAddRule = onAddRule;
+      this.onCreateFromRequest = onCreateFromRequest;
       this.container = null;
       this.shadowRoot = null;
       this.isVisible = false;
@@ -927,6 +928,7 @@
      */
     updateNetworkRequests(requests) {
       this.networkRequests = requests;
+      this.requestsById = new Map(requests.map((r) => [r.id, r]));
       if (!this.shadowRoot) return;
       const listContainer = this.shadowRoot.querySelector("[data-requests-list]");
       const countEl = this.shadowRoot.querySelector('[data-content="requests"] .mm-rules-count');
@@ -945,7 +947,7 @@
       }
       listContainer.innerHTML = requests.map(
         (req) => `
-      <div class="mm-request-item ${req.mocked ? "mm-request-item--mocked" : ""}">
+      <div class="mm-request-item ${req.mocked ? "mm-request-item--mocked" : ""}" data-request-id="${req.id}">
         <div class="mm-request-header">
           <span class="mm-request-method" data-method="${req.method}">${req.method}</span>
           <span class="mm-request-url">${this.escapeHtml(req.url)}</span>
@@ -956,6 +958,9 @@
           <span class="mm-request-status" data-status="${req.status ? Math.floor(req.status / 100).toString() : ""}">${req.status ?? "PENDING"}</span>
           <span class="mm-request-duration">${req.duration ? `${req.duration}ms` : "-"}</span>
           <span class="mm-request-time">${new Date(req.timestamp).toLocaleTimeString()}</span>
+          <button class="mm-btn mm-btn--small mm-btn-create-mock" data-action="create-mock" data-request-id="${req.id}" title="创建 Mock 规则">
+            + Mock
+          </button>
         </div>
         ${req.response !== void 0 ? `
           <details class="mm-request-details">
@@ -966,6 +971,12 @@
       </div>
     `
       ).join("");
+      listContainer.querySelectorAll('[data-action="create-mock"]').forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const id = e.currentTarget.dataset.requestId;
+          if (id) this.handleCreateFromRequest(id);
+        });
+      });
     }
     /**
      * 显示面板
@@ -1012,6 +1023,31 @@
       } else {
         this.show();
       }
+    }
+    /**
+     * 从网络请求创建 Mock 规则
+     */
+    handleCreateFromRequest(requestId) {
+      const requestsById = this.requestsById;
+      const request = requestsById?.get(requestId);
+      if (!request) return;
+      if (this.onCreateFromRequest) {
+        this.onCreateFromRequest(request);
+      }
+      if (!this.shadowRoot) return;
+      const patternInput = this.shadowRoot.querySelector('[name="pattern"]');
+      const responseInput = this.shadowRoot.querySelector('[name="response"]');
+      const statusInput = this.shadowRoot.querySelector('[name="status"]');
+      if (patternInput) {
+        patternInput.value = request.url;
+      }
+      if (responseInput && request.response !== void 0) {
+        responseInput.value = JSON.stringify(request.response, null, 2);
+      }
+      if (statusInput && request.status) {
+        statusInput.value = request.status.toString();
+      }
+      this.switchTab("add");
     }
     /**
      * HTML 转义
@@ -1302,6 +1338,21 @@
         font-size: 12px;
       }
 
+      .mm-btn-create-mock {
+        margin-left: auto;
+        padding: 4px 10px;
+        font-size: 11px;
+        background: #4f46e5;
+        color: #fff;
+        border-color: #4f46e5;
+        white-space: nowrap;
+      }
+
+      .mm-btn-create-mock:hover {
+        background: #4338ca;
+        border-color: #4338ca;
+      }
+
       .mm-btn-icon {
         background: none;
         border: none;
@@ -1495,8 +1546,8 @@
     }
   }
   class PanelWithCallbacks extends Panel {
-    constructor(onAddRule, callbacks) {
-      super(onAddRule);
+    constructor(onAddRule, callbacks, onCreateFromRequest) {
+      super(onAddRule, onCreateFromRequest);
       this.callbacks = callbacks;
     }
     onToggleRule(id) {
