@@ -102,9 +102,9 @@ export class Panel {
       </div>
 
       <div class="mm-tabs">
-        <button class="mm-tab mm-tab--active" data-tab="rules">规则列表</button>
-        <button class="mm-tab" data-tab="add" data-tab-label>添加规则</button>
-        <button class="mm-tab" data-tab="requests">网络请求</button>
+        <button class="mm-tab mm-tab--active" data-tab="rules">规则</button>
+        <button class="mm-tab" data-tab="add" data-tab-label>添加</button>
+        <button class="mm-tab" data-tab="requests">网络</button>
       </div>
 
       <div class="mm-content">
@@ -749,7 +749,7 @@ export class Panel {
     if (form) form.reset();
     if (submitBtn) submitBtn.textContent = '添加规则';
     if (cancelBtn) cancelBtn.style.display = 'none';
-    if (tabLabel) tabLabel.textContent = '添加规则';
+    if (tabLabel) tabLabel.textContent = '添加';
     if (editingIdInput) editingIdInput.value = '';
   }
 
@@ -781,7 +781,7 @@ export class Panel {
     // 更新 UI 状态
     if (submitBtn) submitBtn.textContent = '保存规则';
     if (cancelBtn) cancelBtn.style.display = '';
-    if (tabLabel) tabLabel.textContent = '编辑规则';
+    if (tabLabel) tabLabel.textContent = '编辑';
 
     // 切换到表单标签页
     this.switchTab('add');
