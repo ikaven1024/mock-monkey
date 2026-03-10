@@ -22,18 +22,12 @@ English · [中文文档](./README.zh-CN.md)
 
 ## Features
 
-- 🎯 **Request Interception** - Intercept XMLHttpRequest and Fetch requests
-- 🔧 **Visual Interface** - Intuitive management panel without manual commands
-- 🔁 **Rule Persistence** - Rules auto-save to localStorage, persist across page refreshes
-- 🎨 **Regex Support** - Support both string and regular expression URL matching
-- ⏱️ **Delay Simulation** - Configurable response delays
-- 📊 **Status Code Control** - Custom HTTP status codes
-- 🔌 **Network Monitoring** - Real-time network request logging (up to 500 records)
-- 📥📤 **Import/Export** - Bulk rule import and export
-- 🎭 **Mock.js Integration** - Support for placeholders like `@name`, `@email`
-- 📍 **Position Memory** - Panel and button positions auto-save, draggable
-- 📂 **Rule Collapsing** - Collapsible rule details to save space
-- 🧪 **Unit Testing** - Test coverage based on Vitest + Happy DOM
+- 🎯 **Request Interception** - Intercept XMLHttpRequest and Fetch requests in browser
+- 🔧 **Visual Interface** - Intuitive management panel, no console commands needed
+- 🔁 **Rule Persistence** - Rules auto-save to localStorage, persist across refreshes
+- 🎭 **Mock.js Integration** - Built-in placeholders like `@name`, `@email` for random data
+- 🔌 **Network Monitoring** - Real-time request logging, quickly create rules from requests
+- 📥📤 **Import/Export** - Backup and restore rules in bulk
 
 ## Project Structure
 

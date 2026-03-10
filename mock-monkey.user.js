@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         mock-monkey
-// @namespace    http://tampermonkey.net/
+// @namespace    https://github.com/ikaven1024/
 // @version      1.0.0
 // @description  浏览器本地接口 Mock 的 Tampermonkey 脚本
 // @author       ikaven1024
