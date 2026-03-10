@@ -23,9 +23,11 @@ export class Panel {
   private panelDragStartTime = 0;
   private panelDragOffset = { x: 0, y: 0 };
   private panelPosition: { left: number; top: number } | null = null;
+  private editingRuleId: string | null = null; // 当前正在编辑的规则 ID
 
   constructor(
     private onAddRule: (rule: RuleFormData) => void,
+    private onUpdateRule?: (id: string, rule: RuleFormData) => void,
     private onCreateFromRequest?: (request: NetworkRequest) => void
   ) {
     // 从 localStorage 加载保存的位置
@@ -101,7 +103,7 @@ export class Panel {
 
       <div class="mm-tabs">
         <button class="mm-tab mm-tab--active" data-tab="rules">规则列表</button>
-        <button class="mm-tab" data-tab="add">添加规则</button>
+        <button class="mm-tab" data-tab="add" data-tab-label>添加规则</button>
         <button class="mm-tab" data-tab="requests">网络请求</button>
       </div>
 
@@ -117,6 +119,7 @@ export class Panel {
 
         <div class="mm-tab-content" data-content="add">
           <form class="mm-form" data-action="add-rule">
+            <input type="hidden" name="editing-id" value="">
             <div class="mm-form-group">
               <label class="mm-label">URL 模式 *</label>
               <input class="mm-input" name="pattern" placeholder="/api/user" required>
@@ -140,7 +143,8 @@ export class Panel {
             </div>
 
             <div class="mm-form-actions">
-              <button type="submit" class="mm-btn mm-btn--primary">添加规则</button>
+              <button type="button" class="mm-btn" data-action="cancel-edit" style="display: none;">取消</button>
+              <button type="submit" class="mm-btn mm-btn--primary" data-submit-btn>添加规则</button>
             </div>
           </form>
         </div>
@@ -638,6 +642,11 @@ export class Panel {
       this.handleAddRule(e);
     });
 
+    // 取消编辑按钮
+    this.shadowRoot.querySelector('[data-action="cancel-edit"]')?.addEventListener('click', () => {
+      this.cancelEdit();
+    });
+
     // 阻止面板内的滚轮事件传播到主页面
     const panel = this.shadowRoot.querySelector('.mm-panel');
     if (panel) {
@@ -680,6 +689,7 @@ export class Panel {
     const responseStr = formData.get('response') as string;
     const delay = parseInt(formData.get('delay') as string) || 0;
     const status = parseInt(formData.get('status') as string) || 200;
+    const editingId = formData.get('editing-id') as string;
 
     // 解析 pattern
     let parsedPattern: string | RegExp = pattern;
@@ -704,14 +714,77 @@ export class Panel {
       return;
     }
 
-    this.onAddRule({
+    const ruleData = {
       pattern: parsedPattern,
       response,
       options: { delay, status }
-    });
+    };
 
+    if (editingId) {
+      // 编辑模式
+      this.onUpdateRule?.(editingId, ruleData);
+    } else {
+      // 新增模式
+      this.onAddRule(ruleData);
+    }
+
+    this.cancelEdit();
     form.reset();
     this.switchTab('rules');
+  }
+
+  /**
+   * 取消编辑模式
+   */
+  private cancelEdit(): void {
+    this.editingRuleId = null;
+    if (!this.shadowRoot) return;
+
+    const form = this.shadowRoot.querySelector('[data-action="add-rule"]') as HTMLFormElement;
+    const submitBtn = this.shadowRoot.querySelector('[data-submit-btn]') as HTMLElement;
+    const cancelBtn = this.shadowRoot.querySelector('[data-action="cancel-edit"]') as HTMLElement;
+    const tabLabel = this.shadowRoot.querySelector('[data-tab-label]') as HTMLElement;
+    const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
+
+    if (form) form.reset();
+    if (submitBtn) submitBtn.textContent = '添加规则';
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    if (tabLabel) tabLabel.textContent = '添加规则';
+    if (editingIdInput) editingIdInput.value = '';
+  }
+
+  /**
+   * 进入编辑模式
+   */
+  private enterEditMode(rule: RuleItem): void {
+    this.editingRuleId = rule.id;
+    if (!this.shadowRoot) return;
+
+    const form = this.shadowRoot.querySelector('[data-action="add-rule"]') as HTMLFormElement;
+    const submitBtn = this.shadowRoot.querySelector('[data-submit-btn]') as HTMLElement;
+    const cancelBtn = this.shadowRoot.querySelector('[data-action="cancel-edit"]') as HTMLElement;
+    const tabLabel = this.shadowRoot.querySelector('[data-tab-label]') as HTMLElement;
+    const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
+
+    // 填充表单
+    const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
+    const responseInput = this.shadowRoot.querySelector('[name="response"]') as HTMLTextAreaElement;
+    const delayInput = this.shadowRoot.querySelector('[name="delay"]') as HTMLInputElement;
+    const statusInput = this.shadowRoot.querySelector('[name="status"]') as HTMLInputElement;
+
+    if (patternInput) patternInput.value = rule.patternStr;
+    if (responseInput) responseInput.value = JSON.stringify(rule.response, null, 2);
+    if (delayInput) delayInput.value = rule.delay.toString();
+    if (statusInput) statusInput.value = rule.status.toString();
+    if (editingIdInput) editingIdInput.value = rule.id;
+
+    // 更新 UI 状态
+    if (submitBtn) submitBtn.textContent = '保存规则';
+    if (cancelBtn) cancelBtn.style.display = '';
+    if (tabLabel) tabLabel.textContent = '编辑规则';
+
+    // 切换到表单标签页
+    this.switchTab('add');
   }
 
   /**
@@ -755,6 +828,7 @@ export class Panel {
             <button class="mm-btn-icon" data-action="toggle" data-id="${rule.id}" title="${rule.enabled ? '禁用' : '启用'}">
               ${rule.enabled ? '🟢' : '⚫'}
             </button>
+            <button class="mm-btn-icon" data-action="edit" data-id="${rule.id}" title="编辑">✏️</button>
             <button class="mm-btn-icon" data-action="delete" data-id="${rule.id}" title="删除">🗑️</button>
           </div>
         </div>
@@ -773,6 +847,16 @@ export class Panel {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
         if (id) this.onToggleRule(id);
+      });
+    });
+
+    listContainer.querySelectorAll('[data-action="edit"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (id) {
+          const rule = rules.find(r => r.id === id);
+          if (rule) this.enterEditMode(rule);
+        }
       });
     });
 
@@ -1472,6 +1556,7 @@ export interface RuleItem {
  */
 export interface RuleCallbacks {
   onToggle: (id: string) => void;
+  onEdit: (id: string, rule: RuleFormData) => void;
   onDelete: (id: string) => void;
 }
 
@@ -1482,11 +1567,15 @@ export class PanelWithCallbacks extends Panel {
     private callbacks: RuleCallbacks,
     onCreateFromRequest?: (request: NetworkRequest) => void
   ) {
-    super(onAddRule, onCreateFromRequest);
+    super(onAddRule, callbacks.onEdit, onCreateFromRequest);
   }
 
   onToggleRule(id: string): void {
     this.callbacks.onToggle(id);
+  }
+
+  onEditRule(id: string, rule: RuleFormData): void {
+    this.callbacks.onEdit(id, rule);
   }
 
   onDeleteRule(id: string): void {

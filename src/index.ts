@@ -22,6 +22,7 @@ class MockMonkey {
       (rule) => this.handleAddRule(rule),
       {
         onToggle: (id) => this.handleToggleRule(id),
+        onEdit: (id, rule) => this.handleEditRule(id, rule),
         onDelete: (id) => this.handleDeleteRule(id)
       }
     );
@@ -86,6 +87,23 @@ class MockMonkey {
     const enabled = this.manager.toggle(id);
     this.updateRulesList();
     console.log(`[MockMonkey] 规则已${enabled ? '启用' : '禁用'}`);
+  }
+
+  /**
+   * 编辑规则
+   */
+  private handleEditRule(id: string, rule: RuleFormData): void {
+    const success = this.manager.update(id, {
+      pattern: rule.pattern,
+      response: rule.response,
+      options: rule.options
+    });
+    if (success) {
+      this.updateRulesList();
+      console.log('[MockMonkey] 规则已更新');
+    } else {
+      console.error('[MockMonkey] 规则更新失败：找不到规则');
+    }
   }
 
   /**
