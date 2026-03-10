@@ -832,11 +832,14 @@ export class Panel {
             <button class="mm-btn-icon" data-action="delete" data-id="${rule.id}" title="删除">🗑️</button>
           </div>
         </div>
-        <div class="mm-rule-meta">
-          <span>状态: ${rule.status}</span>
-          <span>延迟: ${rule.delay}ms</span>
-        </div>
-        <pre class="mm-rule-response">${this.escapeHtml(JSON.stringify(rule.response, null, 2))}</pre>
+        <details class="mm-rule-details">
+          <summary class="mm-rule-summary">详情</summary>
+          <div class="mm-rule-meta">
+            <span>状态: ${rule.status}</span>
+            <span>延迟: ${rule.delay}ms</span>
+          </div>
+          <pre class="mm-rule-response">${this.escapeHtml(JSON.stringify(rule.response, null, 2))}</pre>
+        </details>
       </div>
     `
       )
@@ -1201,12 +1204,42 @@ export class Panel {
         gap: 4px;
       }
 
+      .mm-rule-details {
+        margin-top: 8px;
+      }
+
+      .mm-rule-summary {
+        cursor: pointer;
+        font-size: 12px;
+        color: #6b7280;
+        user-select: none;
+        padding: 4px 0;
+        list-style: none;
+      }
+
+      .mm-rule-summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .mm-rule-summary::before {
+        content: '▶';
+        display: inline-block;
+        margin-right: 6px;
+        transition: transform 0.2s;
+        font-size: 10px;
+      }
+
+      details[open] > .mm-rule-summary::before {
+        transform: rotate(90deg);
+      }
+
       .mm-rule-meta {
         display: flex;
         gap: 12px;
         font-size: 12px;
         color: #6b7280;
         margin-bottom: 8px;
+        margin-top: 8px;
       }
 
       .mm-rule-response {
