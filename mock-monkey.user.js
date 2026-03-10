@@ -447,7 +447,6 @@
     }
   }
   class Panel {
-    // 存储当前规则列表用于导出
     constructor(onAddRule, onCreateFromRequest) {
       this.onAddRule = onAddRule;
       this.onCreateFromRequest = onCreateFromRequest;
@@ -462,6 +461,12 @@
       this.dragOffset = { x: 0, y: 0 };
       this.buttonPosition = { x: 20, y: 20 };
       this.currentRules = [];
+      this.panelElement = null;
+      this.isPanelDragging = false;
+      this.panelHasMoved = false;
+      this.panelDragStartTime = 0;
+      this.panelDragOffset = { x: 0, y: 0 };
+      this.panelPosition = null;
       this.handleMouseMove = (e) => {
         if (!this.toggleButton) return;
         const btn = this.toggleButton;
@@ -495,6 +500,36 @@
           this.isDragging = false;
         }, 100);
         this.saveButtonPosition();
+      };
+      this.handlePanelMouseMove = (e) => {
+        if (!this.panelElement) return;
+        const panel = this.panelElement;
+        let newX = e.clientX - this.panelDragOffset.x;
+        let newY = e.clientY - this.panelDragOffset.y;
+        const rect = panel.getBoundingClientRect();
+        if (Math.abs(newX - rect.left) > 3 || Math.abs(newY - rect.top) > 3) {
+          this.panelHasMoved = true;
+          this.isPanelDragging = true;
+        }
+        const maxX = window.innerWidth - rect.width;
+        const maxY = window.innerHeight - rect.height;
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
+        panel.style.left = `${newX}px`;
+        panel.style.top = `${newY}px`;
+        panel.style.transform = "none";
+        this.panelPosition = { left: newX, top: newY };
+      };
+      this.handlePanelMouseUp = () => {
+        if (!this.panelElement) return;
+        const panel = this.panelElement;
+        panel.style.transition = "";
+        document.removeEventListener("mousemove", this.handlePanelMouseMove);
+        document.removeEventListener("mouseup", this.handlePanelMouseUp);
+        setTimeout(() => {
+          this.isPanelDragging = false;
+        }, 100);
+        this.savePanelPosition();
       };
       this.loadButtonPosition();
     }
@@ -539,8 +574,15 @@
       if (!this.shadowRoot) return;
       const panel = document.createElement("div");
       panel.className = "mm-panel";
+      this.loadPanelPosition();
+      if (this.panelPosition) {
+        panel.style.left = `${this.panelPosition.left}px`;
+        panel.style.top = `${this.panelPosition.top}px`;
+        panel.style.transform = "none";
+      }
+      this.panelElement = panel;
       panel.innerHTML = `
-      <div class="mm-header">
+      <div class="mm-header" data-drag-handle="panel">
         <h2 class="mm-title">MockMonkey</h2>
         <button class="mm-close-btn" data-action="close">×</button>
       </div>
@@ -697,6 +739,59 @@
       }
     }
     /**
+     * 绑定面板拖动事件
+     */
+    bindPanelDragEvents() {
+      if (!this.shadowRoot) return;
+      const dragHandle = this.shadowRoot.querySelector('[data-drag-handle="panel"]');
+      if (!dragHandle) return;
+      dragHandle.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+        if (e.target.closest('[data-action="close"]')) return;
+        this.panelDragStartTime = Date.now();
+        this.panelHasMoved = false;
+        this.isPanelDragging = false;
+        const panel = this.panelElement;
+        if (!panel) return;
+        const rect = panel.getBoundingClientRect();
+        this.panelDragOffset.x = e.clientX - rect.left;
+        this.panelDragOffset.y = e.clientY - rect.top;
+        document.addEventListener("mousemove", this.handlePanelMouseMove);
+        document.addEventListener("mouseup", this.handlePanelMouseUp);
+        panel.style.transition = "none";
+        e.preventDefault();
+      });
+    }
+    /**
+     * 保存面板位置到 localStorage
+     */
+    savePanelPosition() {
+      if (!this.panelPosition) return;
+      try {
+        localStorage.setItem("mock-monkey-panel-position", JSON.stringify(this.panelPosition));
+        console.log("[MockMonkey] 面板位置已保存:", this.panelPosition);
+      } catch (e) {
+        console.warn("[MockMonkey] 保存面板位置失败:", e);
+      }
+    }
+    /**
+     * 从 localStorage 加载面板位置
+     */
+    loadPanelPosition() {
+      try {
+        const saved = localStorage.getItem("mock-monkey-panel-position");
+        if (saved) {
+          const position = JSON.parse(saved);
+          if (typeof position.left === "number" && typeof position.top === "number" && position.left >= 0 && position.top >= 0) {
+            this.panelPosition = position;
+            console.log("[MockMonkey] 面板位置已加载:", this.panelPosition);
+          }
+        }
+      } catch (e) {
+        console.warn("[MockMonkey] 加载面板位置失败:", e);
+      }
+    }
+    /**
      * 导出规则
      */
     exportRules() {
@@ -823,6 +918,7 @@
           e.stopPropagation();
         }, { capture: true, passive: true });
       }
+      this.bindPanelDragEvents();
     }
     /**
      * 切换 Tab
@@ -1108,6 +1204,8 @@
         align-items: center;
         padding: 16px 20px;
         border-bottom: 1px solid #e0e0e0;
+        cursor: move;
+        user-select: none;
       }
 
       .mm-title {

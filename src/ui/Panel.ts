@@ -16,6 +16,14 @@ export class Panel {
   private buttonPosition = { x: 20, y: 20 }; // 默认位置 (right, bottom)
   private currentRules: RuleItem[] = []; // 存储当前规则列表用于导出
 
+  // 面板拖动相关
+  private panelElement: HTMLElement | null = null;
+  private isPanelDragging = false;
+  private panelHasMoved = false;
+  private panelDragStartTime = 0;
+  private panelDragOffset = { x: 0, y: 0 };
+  private panelPosition: { left: number; top: number } | null = null;
+
   constructor(
     private onAddRule: (rule: RuleFormData) => void,
     private onCreateFromRequest?: (request: NetworkRequest) => void
@@ -76,8 +84,17 @@ export class Panel {
 
     const panel = document.createElement('div');
     panel.className = 'mm-panel';
+    // 加载保存的面板位置
+    this.loadPanelPosition();
+    if (this.panelPosition) {
+      panel.style.left = `${this.panelPosition.left}px`;
+      panel.style.top = `${this.panelPosition.top}px`;
+      panel.style.transform = 'none';
+    }
+    this.panelElement = panel;
+
     panel.innerHTML = `
-      <div class="mm-header">
+      <div class="mm-header" data-drag-handle="panel">
         <h2 class="mm-title">MockMonkey</h2>
         <button class="mm-close-btn" data-action="close">×</button>
       </div>
@@ -327,6 +344,142 @@ export class Panel {
   }
 
   /**
+   * 绑定面板拖动事件
+   */
+  private bindPanelDragEvents(): void {
+    if (!this.shadowRoot) return;
+
+    const dragHandle = this.shadowRoot.querySelector('[data-drag-handle="panel"]');
+    if (!dragHandle) return;
+
+    dragHandle.addEventListener('mousedown', (e) => {
+      // 只响应左键
+      if (e.button !== 0) return;
+
+      // 如果点击的是关闭按钮，不触发拖动
+      if ((e.target as HTMLElement).closest('[data-action="close"]')) return;
+
+      this.panelDragStartTime = Date.now();
+      this.panelHasMoved = false;
+      this.isPanelDragging = false;
+
+      const panel = this.panelElement;
+      if (!panel) return;
+
+      const rect = panel.getBoundingClientRect();
+      this.panelDragOffset.x = e.clientX - rect.left;
+      this.panelDragOffset.y = e.clientY - rect.top;
+
+      // 添加全局事件监听
+      document.addEventListener('mousemove', this.handlePanelMouseMove);
+      document.addEventListener('mouseup', this.handlePanelMouseUp);
+
+      // 移除过渡效果以提高拖动性能
+      panel.style.transition = 'none';
+
+      // 阻止文本选择
+      e.preventDefault();
+    });
+  }
+
+  /**
+   * 处理面板鼠标移动（拖动）
+   */
+  private handlePanelMouseMove = (e: MouseEvent): void => {
+    if (!this.panelElement) return;
+
+    const panel = this.panelElement;
+
+    // 计算新位置
+    let newX = e.clientX - this.panelDragOffset.x;
+    let newY = e.clientY - this.panelDragOffset.y;
+
+    // 检测是否真正移动了
+    const rect = panel.getBoundingClientRect();
+    if (Math.abs(newX - rect.left) > 3 || Math.abs(newY - rect.top) > 3) {
+      this.panelHasMoved = true;
+      this.isPanelDragging = true;
+    }
+
+    // 边界限制
+    const maxX = window.innerWidth - rect.width;
+    const maxY = window.innerHeight - rect.height;
+
+    newX = Math.max(0, Math.min(newX, maxX));
+    newY = Math.max(0, Math.min(newY, maxY));
+
+    // 更新位置
+    panel.style.left = `${newX}px`;
+    panel.style.top = `${newY}px`;
+    panel.style.transform = 'none';
+
+    // 更新保存的位置
+    this.panelPosition = { left: newX, top: newY };
+  };
+
+  /**
+   * 处理面板鼠标松开
+   */
+  private handlePanelMouseUp = (): void => {
+    if (!this.panelElement) return;
+
+    const panel = this.panelElement;
+
+    // 恢复过渡效果
+    panel.style.transition = '';
+
+    // 移除全局事件监听
+    document.removeEventListener('mousemove', this.handlePanelMouseMove);
+    document.removeEventListener('mouseup', this.handlePanelMouseUp);
+
+    // 延迟重置拖动状态
+    setTimeout(() => {
+      this.isPanelDragging = false;
+    }, 100);
+
+    // 保存位置到 localStorage
+    this.savePanelPosition();
+  };
+
+  /**
+   * 保存面板位置到 localStorage
+   */
+  private savePanelPosition(): void {
+    if (!this.panelPosition) return;
+
+    try {
+      localStorage.setItem('mock-monkey-panel-position', JSON.stringify(this.panelPosition));
+      console.log('[MockMonkey] 面板位置已保存:', this.panelPosition);
+    } catch (e) {
+      console.warn('[MockMonkey] 保存面板位置失败:', e);
+    }
+  }
+
+  /**
+   * 从 localStorage 加载面板位置
+   */
+  private loadPanelPosition(): void {
+    try {
+      const saved = localStorage.getItem('mock-monkey-panel-position');
+      if (saved) {
+        const position = JSON.parse(saved) as { left: number; top: number };
+        // 验证位置有效性
+        if (
+          typeof position.left === 'number' &&
+          typeof position.top === 'number' &&
+          position.left >= 0 &&
+          position.top >= 0
+        ) {
+          this.panelPosition = position;
+          console.log('[MockMonkey] 面板位置已加载:', this.panelPosition);
+        }
+      }
+    } catch (e) {
+      console.warn('[MockMonkey] 加载面板位置失败:', e);
+    }
+  }
+
+  /**
    * 导出规则
    */
   private exportRules(): void {
@@ -492,6 +645,9 @@ export class Panel {
         e.stopPropagation();
       }, { capture: true, passive: true });
     }
+
+    // 绑定面板拖动事件
+    this.bindPanelDragEvents();
   }
 
   /**
@@ -827,6 +983,8 @@ export class Panel {
         align-items: center;
         padding: 16px 20px;
         border-bottom: 1px solid #e0e0e0;
+        cursor: move;
+        user-select: none;
       }
 
       .mm-title {
