@@ -215,6 +215,25 @@ export class Interceptor {
 
     setTimeout(() => {
       const duration = Date.now() - requestTime;
+
+      // 使用 Mock.js 解析模板
+      let mockResponse = rule.response;
+      if (typeof window !== 'undefined' && (window as any).Mock) {
+        try {
+          const originalResponse = JSON.stringify(rule.response);
+          mockResponse = (window as any).Mock.mock(rule.response);
+          const mockResponseStr = JSON.stringify(mockResponse);
+          if (originalResponse !== mockResponseStr) {
+            console.log('[MockMonkey] Mock.js 已解析模板');
+          }
+        } catch (e) {
+          console.warn('[MockMonkey] Mock.js 解析失败，使用原始响应:', e);
+          mockResponse = rule.response;
+        }
+      } else {
+        console.warn('[MockMonkey] Mock.js 未加载，占位符将不会被替换');
+      }
+
       Object.defineProperty(xhr, 'readyState', {
         value: 4,
         writable: false,
@@ -226,7 +245,7 @@ export class Interceptor {
         configurable: true
       });
 
-      const responseText = JSON.stringify(rule.response);
+      const responseText = JSON.stringify(mockResponse);
       Object.defineProperty(xhr, 'responseText', {
         value: responseText,
         writable: false,
@@ -239,7 +258,7 @@ export class Interceptor {
       });
 
       // 更新实际耗时
-      self.recorder.updateRequest(requestId, { duration });
+      self.recorder.updateRequest(requestId, { duration, response: mockResponse });
 
       const isSuccess = (rule.options.status || 200) >= 200 && (rule.options.status || 200) < 300;
       const eventType = isSuccess ? 'load' : 'error';
@@ -265,11 +284,29 @@ export class Interceptor {
         const duration = Date.now() - requestTime;
         const headers = rule.options.headers || { 'Content-Type': 'application/json' };
 
+        // 使用 Mock.js 解析模板
+        let mockResponse = rule.response;
+        if (typeof window !== 'undefined' && (window as any).Mock) {
+          try {
+            const originalResponse = JSON.stringify(rule.response);
+            mockResponse = (window as any).Mock.mock(rule.response);
+            const mockResponseStr = JSON.stringify(mockResponse);
+            if (originalResponse !== mockResponseStr) {
+              console.log('[MockMonkey] Mock.js 已解析模板');
+            }
+          } catch (e) {
+            console.warn('[MockMonkey] Mock.js 解析失败，使用原始响应:', e);
+            mockResponse = rule.response;
+          }
+        } else {
+          console.warn('[MockMonkey] Mock.js 未加载，占位符将不会被替换');
+        }
+
         // 更新实际耗时
-        this.recorder.updateRequest(requestId, { duration });
+        this.recorder.updateRequest(requestId, { duration, response: mockResponse });
 
         resolve(
-          new Response(JSON.stringify(rule.response), {
+          new Response(JSON.stringify(mockResponse), {
             status: rule.options.status || 200,
             headers
           })
