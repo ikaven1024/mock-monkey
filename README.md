@@ -4,209 +4,211 @@
 
 # MockMonkey
 
-浏览器本地接口 Mock 的 Tampermonkey 脚本，无需依赖任何 Mock 服务。使用 TypeScript 构建，提供可视化界面管理 Mock 规则。
+A browser-native API mocking Tampermonkey script that requires no backend Mock services. Built with TypeScript, featuring a visual interface for managing Mock rules.
 
-## 功能特性
+[中文文档](./README.zh-CN.md)
 
-- 🎯 **拦截请求** - 拦截 XMLHttpRequest 和 Fetch 请求
-- 🔧 **可视化界面** - 直观的管理面板，无需手动输入命令
-- 🔁 **规则持久化** - 规则自动保存到 localStorage，刷新页面不丢失
-- 🎨 **支持正则** - 支持字符串和正则表达式匹配 URL
-- ⏱️ **延迟模拟** - 可配置响应延迟
-- 📊 **状态码控制** - 支持自定义 HTTP 状态码
-- 🔌 **网络监控** - 实时显示所有网络请求记录（最多 500 条）
-- 📥📤 **导入导出** - 支持规则批量导入导出
-- 🎭 **Mock.js 集成** - 支持 `@name`、`@email` 等占位符语法
-- 📍 **位置记忆** - 面板和按钮位置自动保存，支持拖动调整
-- 📂 **规则折叠** - 规则列表支持折叠详情，节省空间
-- 🧪 **单元测试** - 基于 Vitest + Happy DOM 的测试覆盖
+## Features
 
-## 项目结构
+- 🎯 **Request Interception** - Intercept XMLHttpRequest and Fetch requests
+- 🔧 **Visual Interface** - Intuitive management panel without manual commands
+- 🔁 **Rule Persistence** - Rules auto-save to localStorage, persist across page refreshes
+- 🎨 **Regex Support** - Support both string and regular expression URL matching
+- ⏱️ **Delay Simulation** - Configurable response delays
+- 📊 **Status Code Control** - Custom HTTP status codes
+- 🔌 **Network Monitoring** - Real-time network request logging (up to 500 records)
+- 📥📤 **Import/Export** - Bulk rule import and export
+- 🎭 **Mock.js Integration** - Support for placeholders like `@name`, `@email`
+- 📍 **Position Memory** - Panel and button positions auto-save, draggable
+- 📂 **Rule Collapsing** - Collapsible rule details to save space
+- 🧪 **Unit Testing** - Test coverage based on Vitest + Happy DOM
+
+## Project Structure
 
 ```
 MockMonkey/
 ├── src/
 │   ├── core/
-│   │   ├── MockManager.ts       # Mock 规则管理器
-│   │   ├── Interceptor.ts       # 请求拦截器
-│   │   └── RequestRecorder.ts   # 网络请求记录器
+│   │   ├── MockManager.ts       # Mock rule manager
+│   │   ├── Interceptor.ts       # Request interceptor
+│   │   └── RequestRecorder.ts   # Network request recorder
 │   ├── ui/
-│   │   └── Panel.ts             # 可视化管理面板
+│   │   └── Panel.ts             # Visual management panel
 │   ├── types/
-│   │   └── index.ts             # TypeScript 类型定义
-│   └── index.ts                 # 入口文件
+│   │   └── index.ts             # TypeScript type definitions
+│   └── index.ts                 # Entry point
 ├── test/
-│   ├── MockManager.test.ts      # 规则管理器测试
-│   ├── Interceptor.test.ts      # 拦截器测试
-│   ├── RequestRecorder.test.ts  # 请求记录器测试
-│   └── setup.ts                 # 测试环境设置
+│   ├── MockManager.test.ts      # Rule manager tests
+│   ├── Interceptor.test.ts      # Interceptor tests
+│   ├── RequestRecorder.test.ts  # Request recorder tests
+│   └── setup.ts                 # Test environment setup
 ├── vendor/
-│   └── mock.min.js              # Mock.js 库
-├── dist/                        # 构建输出目录
-├── mock-monkey.user.js          # 生成的 Tampermonkey 脚本
-├── vite.config.ts               # Vite 配置
-├── vitest.config.ts             # Vitest 配置
-├── tsconfig.json                # TypeScript 配置
-└── package.json                 # 项目配置
+│   └── mock.min.js              # Mock.js library
+├── dist/                        # Build output directory
+├── mock-monkey.user.js          # Generated Tampermonkey script
+├── vite.config.ts               # Vite configuration
+├── vitest.config.ts             # Vitest configuration
+├── tsconfig.json                # TypeScript configuration
+└── package.json                 # Project configuration
 ```
 
-## 开发
+## Development
 
-### 安装依赖
+### Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 构建
+### Build
 
 ```bash
 npm run build
 ```
 
-### 类型检查
+### Type Check
 
 ```bash
 npm run type-check
 ```
 
-### 监听模式（开发时自动构建）
+### Watch Mode (auto-build during development)
 
 ```bash
 npm run dev
 ```
 
-### 测试
+### Testing
 
 ```bash
-# 运行单元测试
+# Run unit tests
 npm run test
 
-# 运行测试 UI 界面
+# Run test UI
 npm run test:ui
 
-# 生成测试覆盖率报告
+# Generate test coverage report
 npm run test:coverage
 ```
 
-## 使用方法
+## Usage
 
-### 1. 安装脚本
+### 1. Install Script
 
-1. 安装 [Tampermonkey](https://www.tampermonkey.net/) 浏览器扩展
-2. 打开 Tampermonkey 管理面板
-3. 点击「添加新脚本」
-4. 复制 `mock-monkey.user.js` 的内容并保存
+1. Install [Tampermonkey](https://www.tampermonkey.net/) browser extension
+2. Open Tampermonkey management panel
+3. Click "Add New Script"
+4. Copy and paste the content of `mock-monkey.user.js`
 
-### 2. 使用可视化界面
+### 2. Using Visual Interface
 
-脚本安装后，访问任意网页：
+After installing the script, visit any webpage:
 
-1. 点击页面**右下角的 🐵 按钮**打开管理面板
-2. 拖动按钮和面板可调整位置（位置自动保存）
-3. 使用三个标签页管理 Mock：
+1. Click the **🐵 button in the bottom-right corner** to open the management panel
+2. Drag the button and panel to adjust position (position auto-saves)
+3. Use three tabs to manage Mock:
 
-**📋 规则标签页**
-- 查看所有 Mock 规则列表
-- 启用/禁用规则（点击 🟢/⚫ 图标）
-- 编辑规则（点击 ✏️ 图标）
-- 删除规则（点击 🗑️ 图标）
-- 导出/导入规则（点击底部按钮）
-- 规则详情支持折叠，点击可展开查看响应数据
+**📋 Rules Tab**
+- View all Mock rules
+- Enable/disable rules (click 🟢/⚫ icons)
+- Edit rules (click ✏️ icon)
+- Delete rules (click 🗑️ icon)
+- Export/import rules (click bottom buttons)
+- Rule details are collapsible, click to expand and view response data
 
-**➕ 添加标签页**
-- 配置 URL 模式（支持字符串和正则表达式）
-- 设置响应数据（支持 Mock.js 占位符）
-- 配置延迟、状态码、响应头
-- 编辑现有规则
+**➕ Add Tab**
+- Configure URL pattern (supports string and regex)
+- Set response data (supports Mock.js placeholders)
+- Configure delay, status code, response headers
+- Edit existing rules
 
-**🌐 网络标签页**
-- 实时显示所有网络请求（最多 500 条）
-- 查看请求方法、URL、状态码、耗时
-- 点击请求可快速创建 Mock 规则
-- 清空请求记录
+**🌐 Network Tab**
+- Real-time display of all network requests (up to 500)
+- View request method, URL, status code, duration
+- Click request to quickly create Mock rule
+- Clear request records
 
-### 3. 控制台 API（可选）
+### 3. Console API (Optional)
 
-也可以在浏览器控制台（F12）中使用 API：
+You can also use the API in the browser console (F12):
 
 ```javascript
-// 添加 Mock 规则
+// Add Mock rule
 mockMonkey.add('/api/user', {
     code: 200,
-    data: { name: '张三' }
+    data: { name: 'John Doe' }
 });
 
-// 使用正则匹配
+// Use regex matching
 mockMonkey.add(/\/api\/posts\/\d+/, {
     id: 123,
-    title: '测试文章'
+    title: 'Test Post'
 });
 
-// 带延迟和状态码
+// With delay and status code
 mockMonkey.add('/api/slow', { data: 'test' }, {
-    delay: 1000,    // 延迟 1 秒
-    status: 201,    // 返回 201 状态码
-    headers: {      // 自定义响应头
+    delay: 1000,    // 1 second delay
+    status: 201,    // Return 201 status code
+    headers: {      // Custom response headers
         'X-Custom-Header': 'value'
     }
 });
 
-// 列出所有规则
+// List all rules
 mockMonkey.list();
 
-// 列出所有网络请求
+// List all network requests
 mockMonkey.listRequests();
 
-// 删除规则
+// Remove rule
 mockMonkey.remove('/api/user');
 
-// 清空所有规则
+// Clear all rules
 mockMonkey.clear();
 
-// 清空请求记录
+// Clear request records
 mockMonkey.clearRequests();
 
-// 访问底层实例
-mockMonkey.manager    // MockManager 实例
-mockMonkey.recorder   // RequestRecorder 实例
+// Access underlying instances
+mockMonkey.manager    // MockManager instance
+mockMonkey.recorder   // RequestRecorder instance
 ```
 
-## 规则配置
+## Rule Configuration
 
-| 字段 | 说明 | 示例 |
-|------|------|------|
-| URL 模式 | 匹配的 URL，支持字符串或正则 | `/api/user` 或 `/\/api\/user\/\d+/` |
-| 响应数据 | 返回的 JSON 数据，支持 Mock.js 占位符 | `{"name": "@name", "email": "@email"}` |
-| 延迟 | 响应延迟（毫秒） | `500` |
-| 状态码 | HTTP 状态码 | `200`、`404`、`500` |
-| 响应头 | 自定义响应头 | `{"Content-Type": "application/json"}` |
+| Field | Description | Example |
+|------|-------------|---------|
+| URL Pattern | URL to match, supports string or regex | `/api/user` or `/\/api\/user\/\d+/` |
+| Response Data | JSON response data, supports Mock.js placeholders | `{"name": "@name", "email": "@email"}` |
+| Delay | Response delay (milliseconds) | `500` |
+| Status Code | HTTP status code | `200`, `404`, `500` |
+| Response Headers | Custom response headers | `{"Content-Type": "application/json"}` |
 
-## Mock.js 占位符
+## Mock.js Placeholders
 
-MockMonkey 内置了 Mock.js 库，支持占位符语法生成随机数据：
+MockMonkey includes the Mock.js library, supporting placeholder syntax to generate random data:
 
-| 占位符 | 说明 | 示例输出 |
-|--------|------|----------|
-| `@name` | 随机姓名 | "张三" |
-| `@email` | 随机邮箱 | "test@example.com" |
-| `@phone` | 随机手机号 | "13800138000" |
-| `@date` | 随机日期 | "2024-03-10" |
-| `@boolean` | 随机布尔值 | true/false |
-| `@natural(min, max)` | 随机自然数 | 42 |
-| `@string(length)` | 随机字符串 | "xYz" |
-| `@image(size)` | 随机图片 URL | "http://dummyimage.com/100x100" |
+| Placeholder | Description | Example Output |
+|-------------|-------------|----------------|
+| `@name` | Random name | "John Doe" |
+| `@email` | Random email | "test@example.com" |
+| `@phone` | Random phone number | "13800138000" |
+| `@date` | Random date | "2024-03-10" |
+| `@boolean` | Random boolean | true/false |
+| `@natural(min, max)` | Random natural number | 42 |
+| `@string(length)` | Random string | "xYz" |
+| `@image(size)` | Random image URL | "http://dummyimage.com/100x100" |
 
-更多占位符请参考 [Mock.js 文档](http://mockjs.com/examples.html)。
+For more placeholders, see [Mock.js Documentation](http://mockjs.com/examples.html).
 
-## 示例
+## Examples
 
-### Mock 用户登录接口
+### Mock User Login API
 
 ```javascript
-// 在可视化界面中配置：
-// URL 模式: /api/login
-// 响应数据:
+// Configure in visual interface:
+// URL Pattern: /api/login
+// Response Data:
 {
   "code": 200,
   "message": "success",
@@ -221,47 +223,47 @@ MockMonkey 内置了 Mock.js 库，支持占位符语法生成随机数据：
 }
 ```
 
-### Mock 带延迟的接口
+### Mock Delayed API
 
 ```javascript
-// 在可视化界面中配置：
-// URL 模式: /api/user/info
-// 响应数据:
+// Configure in visual interface:
+// URL Pattern: /api/user/info
+// Response Data:
 {
   "code": 200,
   "data": {
     "id": 1,
-    "name": "测试用户",
+    "name": "Test User",
     "avatar": "@image(100x100)"
   }
 }
-// 延迟: 500 (毫秒)
-// 状态码: 200
+// Delay: 500 (milliseconds)
+// Status Code: 200
 ```
 
-### Mock 错误响应
+### Mock Error Response
 
 ```javascript
-// 在可视化界面中配置：
-// URL 模式: /api/error
-// 响应数据:
+// Configure in visual interface:
+// URL Pattern: /api/error
+// Response Data:
 {
   "code": 500,
-  "message": "服务器错误"
+  "message": "Internal Server Error"
 }
-// 状态码: 500
+// Status Code: 500
 ```
 
-### Mock 列表数据
+### Mock List Data
 
 ```javascript
-// 在可视化界面中配置：
-// URL 模式: /api/users
-// 响应数据:
+// Configure in visual interface:
+// URL Pattern: /api/users
+// Response Data:
 {
   "code": 200,
-  "data|10": [{    // 生成 10 条数据
-    "id|+1": 1,    // 自增 ID
+  "data|10": [{    // Generate 10 items
+    "id|+1": 1,    // Auto-increment ID
     "name": "@name",
     "email": "@email",
     "status": "@boolean"
