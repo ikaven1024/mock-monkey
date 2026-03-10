@@ -35,7 +35,7 @@ export class RequestRecorder {
    * 获取所有请求记录
    */
   getRequests(): NetworkRequest[] {
-    return this.requests;
+    return [...this.requests];
   }
 
   /**
