@@ -823,7 +823,7 @@ export class Panel {
         (rule) => `
       <div class="mm-rule-item ${rule.enabled ? '' : 'mm-rule-item--disabled'}">
         <div class="mm-rule-header">
-          <span class="mm-rule-pattern">${this.escapeHtml(rule.patternStr)}</span>
+          <span class="mm-rule-pattern" title="${this.escapeHtmlAttr(rule.patternStr)}">${this.escapeHtml(rule.patternStr)}</span>
           <div class="mm-rule-actions">
             <button class="mm-btn-icon" data-action="toggle" data-id="${rule.id}" title="${rule.enabled ? '禁用' : '启用'}">
               ${rule.enabled ? '🟢' : '⚫'}
@@ -904,7 +904,7 @@ export class Panel {
       <div class="mm-request-item ${req.mocked ? 'mm-request-item--mocked' : ''}" data-request-id="${req.id}">
         <div class="mm-request-header">
           <span class="mm-request-method" data-method="${req.method}">${req.method}</span>
-          <span class="mm-request-url">${this.escapeHtml(req.url)}</span>
+          <span class="mm-request-url" title="${this.escapeHtmlAttr(req.url)}">${this.escapeHtml(this.truncateUrl(req.url))}</span>
           <span class="mm-request-type">${req.type}</span>
           ${req.mocked ? '<span class="mm-badge mm-badge--mocked">MOCK</span>' : ''}
         </div>
@@ -1026,6 +1026,55 @@ export class Panel {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * HTML 属性转义（转义双引号）
+   */
+  private escapeHtmlAttr(text: string): string {
+    return this.escapeHtml(text).replace(/"/g, '&quot;');
+  }
+
+  /**
+   * 截断 URL，显示域名 + 路径 + 部分查询参数
+   */
+  private truncateUrl(url: string, maxLength = 100): string {
+    try {
+      const urlObj = new URL(url);
+      const baseUrl = `${urlObj.origin}${urlObj.pathname}`;
+
+      if (urlObj.search) {
+        // 保留前几个查询参数
+        const searchParams = new URLSearchParams(urlObj.search);
+        const params: string[] = [];
+        let currentLength = baseUrl.length + 1; // +1 for '?'
+
+        for (const [key, value] of searchParams.entries()) {
+          const paramStr = `${key}=${value}`;
+          if (currentLength + paramStr.length + 1 > maxLength) {
+            // 加上这个参数会超过最大长度，停止添加
+            break;
+          }
+          params.push(paramStr);
+          currentLength += paramStr.length + 1; // +1 for '&'
+        }
+
+        const queryString = params.length > 0 ? '?' + params.join('&') : '?';
+        // 如果还有更多参数，添加 ...
+        if (params.length < Array.from(searchParams.entries()).length) {
+          return baseUrl + queryString + '...';
+        }
+        return baseUrl + queryString;
+      }
+
+      return baseUrl;
+    } catch {
+      // URL 解析失败，按长度截断
+      if (url.length > maxLength) {
+        return url.substring(0, maxLength - 3) + '...';
+      }
+      return url;
+    }
   }
 
   /**
@@ -1193,10 +1242,15 @@ export class Panel {
       }
 
       .mm-rule-pattern {
+        flex: 1;
+        min-width: 0;
         font-weight: 500;
         color: #4f46e5;
         font-family: 'Monaco', 'Menlo', monospace;
         font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .mm-rule-actions {
@@ -1469,10 +1523,13 @@ export class Panel {
 
       .mm-request-url {
         flex: 1;
+        min-width: 0;
         font-family: 'Monaco', 'Menlo', monospace;
         font-size: 12px;
-        word-break: break-all;
         color: #374151;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .mm-request-type {

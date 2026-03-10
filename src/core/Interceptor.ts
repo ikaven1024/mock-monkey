@@ -258,7 +258,7 @@ export class Interceptor {
       });
 
       // 更新实际耗时
-      self.recorder.updateRequest(requestId, { duration, response: mockResponse });
+      this.recorder.updateRequest(requestId, { duration, response: mockResponse });
 
       const isSuccess = (rule.options.status || 200) >= 200 && (rule.options.status || 200) < 300;
       const eventType = isSuccess ? 'load' : 'error';
