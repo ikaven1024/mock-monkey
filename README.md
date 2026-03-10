@@ -9,7 +9,7 @@
 <p>
   <img src="https://img.shields.io/badge/TypeScript-5.7-blue" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Vite-6.0-646CFF" alt="Vite" />
-  <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="License" /></a>
 </p>
 
 <a href="https://github.com/ikaven1024/mock-monkey/raw/refs/heads/main/mock-monkey.user.js">

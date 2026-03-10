@@ -17,7 +17,7 @@
     "api",
     "browser"
   ],
-  "author": "",
+  "author": "ikaven1024",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^25.3.5",

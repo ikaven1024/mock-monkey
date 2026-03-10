@@ -9,10 +9,10 @@ const mockJsCode = readFileSync('./vendor/mock.min.js', 'utf-8');
 
 const userscriptHeader = `// ==UserScript==
 // @name         ${pkg.name}
-// @namespace    http://tampermonkey.net/
+// @namespace    https://github.com/ikaven1024/
 // @version      ${pkg.version}
 // @description  ${pkg.description}
-// @author       You
+// @author       ${pkg.author}
 // @match        *://*/*
 // @grant        none
 // @run-at       document-end

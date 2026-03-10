@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.0.0
 // @description  浏览器本地接口 Mock 的 Tampermonkey 脚本
-// @author       You
+// @author       ikaven1024
 // @match        *://*/*
 // @grant        none
 // @run-at       document-end
