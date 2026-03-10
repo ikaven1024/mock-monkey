@@ -1,12 +1,24 @@
-<p align="center">
-  <img src="logo/logo.svg" alt="MockMonkey Logo" width="120" height="120">
+<div align="center">
+
+<img src="logo/logo.svg" alt="MockMonkey Logo" width="120">
+
+<h1>MockMonkey</h1>
+
+<p>A browser-native API mocking Tampermonkey script that requires no backend Mock services. Built with TypeScript, featuring a visual interface for managing Mock rules.</p>
+
+<p>
+  <img src="https://img.shields.io/badge/TypeScript-5.7-blue" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Vite-6.0-646CFF" alt="Vite" />
+  <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
 </p>
 
-# MockMonkey
+<a href="https://github.com/ikaven1024/mock-monkey/raw/refs/heads/main/mock-monkey.user.js">
+  <img src="https://img.shields.io/badge/%F0%9F%90%B5-Install%20Script-B31D1D?logo=Tampermonkey&logoColor=white" alt="Install" />
+</a>
 
-A browser-native API mocking Tampermonkey script that requires no backend Mock services. Built with TypeScript, featuring a visual interface for managing Mock rules.
+English · [中文文档](./README.zh-CN.md)
 
-[中文文档](./README.zh-CN.md)
+</div>
 
 ## Features
 
