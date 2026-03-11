@@ -13,7 +13,11 @@ const userscriptHeader = `// ==UserScript==
 // @namespace    https://github.com/ikaven1024/
 // @version      ${pkg.version}
 // @description  ${pkg.description}
+// @description:en  A browser-native API mocking Tampermonkey script that requires no backend
 // @author       ${pkg.author}
+// @license      MIT
+// @homepageURL  https://github.com/ikaven1024/mock-monkey
+// @supportURL   https://github.com/ikaven1024/mock-monkey/issues
 // @match        *://*/*
 // @grant        none
 // @run-at       document-end

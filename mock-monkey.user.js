@@ -3,7 +3,11 @@
 // @namespace    https://github.com/ikaven1024/
 // @version      1.0.0
 // @description  浏览器本地接口 Mock 的 Tampermonkey 脚本
+// @description:en  A browser-native API mocking Tampermonkey script that requires no backend
 // @author       ikaven1024
+// @license      MIT
+// @homepageURL  https://github.com/ikaven1024/mock-monkey
+// @supportURL   https://github.com/ikaven1024/mock-monkey/issues
 // @match        *://*/*
 // @grant        none
 // @run-at       document-end
