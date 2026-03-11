@@ -52,6 +52,7 @@ export default defineConfig({
       closeBundle() {
         const inputFile = resolve(__dirname, 'dist/mock-monkey.iife.js');
         const outputFile = resolve(__dirname, 'dist/mock-monkey.user.js');
+        const rootOutputFile = resolve(__dirname, 'mock-monkey.user.js');
 
         // 读取构建后的文件，移除 banner 注释和 PURE 注释
         let content = readFileSync(inputFile, 'utf-8');
@@ -72,7 +73,9 @@ export default defineConfig({
         const finalContent = userscriptHeader + mockWrapper + '\n' + content;
 
         writeFileSync(outputFile, finalContent);
+        writeFileSync(rootOutputFile, finalContent);
         console.log(`✓ UserScript created: ${outputFile}`);
+        console.log(`✓ UserScript copied to: ${rootOutputFile}`);
       }
     }
   ]
