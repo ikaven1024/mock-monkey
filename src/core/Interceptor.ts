@@ -1,4 +1,5 @@
 import type { MockRule } from '../types';
+import { MockManager } from './MockManager';
 import { RequestRecorder } from './RequestRecorder';
 
 /**
@@ -60,12 +61,12 @@ export class Interceptor {
   private interceptXHR(): void {
     const self = this;
 
-    XMLHttpRequest.prototype.open = function (method: string, url: string | URL, ...args: unknown[]) {
+    XMLHttpRequest.prototype.open = function (method: string, url: string | URL, async?: boolean, username?: string | null, password?: string | null) {
       (this as unknown as Record<string, unknown>)._mockMethod = method;
       (this as unknown as Record<string, unknown>)._mockUrl = url.toString();
       (this as unknown as Record<string, unknown>)._mockRequestId = RequestRecorder.generateId();
       (this as unknown as Record<string, unknown>)._mockRequestTime = Date.now();
-      return self.xhrOpen.call(this, method, url, ...args);
+      return self.xhrOpen.call(this, method, url, async ?? true, username, password);
     };
 
     XMLHttpRequest.prototype.send = function (body?: Document | XMLHttpRequestBodyInit | null) {
@@ -106,35 +107,35 @@ export class Interceptor {
 
       // For non-mocked requests, listen for completion events
       const originalOnReadyStateChange = xhr.onreadystatechange;
-      xhr.onreadystatechange = function (this: XMLHttpRequest, ...args) {
+      xhr.onreadystatechange = function (this: XMLHttpRequest, ev?: Event) {
         if (xhr.readyState === XMLHttpRequest.DONE) {
           const duration = Date.now() - requestTime;
           self.recorder.updateRequest(requestId, {
-            status: xhr.status,
+            status: xhr.status as number,
             duration
           });
         }
         if (originalOnReadyStateChange) {
-          return originalOnReadyStateChange.call(this, ...args);
+          return (originalOnReadyStateChange as (this: XMLHttpRequest, ev?: Event) => unknown).call(this, ev);
         }
       };
 
       const originalOnLoad = xhr.onload;
-      xhr.onload = function (this: XMLHttpRequest, ...args) {
+      xhr.onload = function (this: XMLHttpRequest, ev?: Event) {
         const duration = Date.now() - requestTime;
         let response: unknown;
         try {
-          response = JSON.parse(xhr.responseText);
+          response = JSON.parse(xhr.responseText as string);
         } catch {
           response = xhr.responseText;
         }
         self.recorder.updateRequest(requestId, {
-          status: xhr.status,
+          status: xhr.status as number,
           response,
           duration
         });
         if (originalOnLoad) {
-          return originalOnLoad.call(this, ...args);
+          return (originalOnLoad as (this: XMLHttpRequest, ev?: Event) => unknown).call(this, ev);
         }
       };
 
@@ -267,7 +268,7 @@ export class Interceptor {
       xhr.dispatchEvent(new Event('loadend'));
 
       if (xhr.onreadystatechange) {
-        xhr.onreadystatechange();
+        xhr.onreadystatechange(new Event('readystatechange'));
       }
     }, delay);
   }
