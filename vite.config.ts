@@ -51,7 +51,7 @@ export default defineConfig({
       name: 'add-userscript-header',
       closeBundle() {
         const inputFile = resolve(__dirname, 'dist/mock-monkey.iife.js');
-        const outputFile = resolve(__dirname, 'mock-monkey.user.js');
+        const outputFile = resolve(__dirname, 'dist/mock-monkey.user.js');
 
         // 读取构建后的文件，移除 banner 注释和 PURE 注释
         let content = readFileSync(inputFile, 'utf-8');

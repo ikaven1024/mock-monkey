@@ -12,7 +12,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="License" /></a>
 </p>
 
-<a href="https://github.com/ikaven1024/mock-monkey/raw/refs/heads/main/mock-monkey.user.js">
+<a href="https://github.com/ikaven1024/mock-monkey/releases/latest/download/mock-monkey.user.js">
   <img src="https://img.shields.io/badge/%F0%9F%90%B5-Install%20Script-B31D1D?logo=Tampermonkey&logoColor=white" alt="Install" />
 </a>
 
