@@ -110,7 +110,7 @@ npm run test:coverage
 
 After installing the script, visit any webpage:
 
-1. Click the **🐵 button in the bottom-right corner** to open the management panel
+1. Click the **<img src="logo/logo.svg" alt="🐵" style="vertical-align: middle; height: 1.2em;"> button in the bottom-right corner** to open the management panel
 2. Drag the button and panel to adjust position (position auto-saves)
 3. Use three tabs to manage Mock:
 

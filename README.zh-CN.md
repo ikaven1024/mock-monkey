@@ -110,7 +110,7 @@ npm run test:coverage
 
 脚本安装后，访问任意网页：
 
-1. 点击页面**右下角的 🐵 按钮**打开管理面板
+1. 点击页面**右下角的 <img src="logo/logo.svg" alt="🐵" style="vertical-align: middle; height: 1.2em;"> 按钮**打开管理面板
 2. 拖动按钮和面板可调整位置（位置自动保存）
 3. 使用三个标签页管理 Mock：
 
