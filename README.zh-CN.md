@@ -10,6 +10,9 @@
   <img src="https://img.shields.io/badge/TypeScript-5.7-blue" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Vite-6.0-646CFF" alt="Vite" />
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="License" /></a>
+  <a href="https://github.com/ikaven1024/mock-monkey/actions/workflows/ci.yml">
+    <img src="https://github.com/ikaven1024/mock-monkey/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  </a>
 </p>
 
 <a href="https://github.com/ikaven1024/mock-monkey/releases/latest/download/mock-monkey.user.js">

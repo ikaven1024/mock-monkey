@@ -53,7 +53,7 @@ export class Panel {
 
     // Wait for body to exist before adding to page
     this.ensureBody().then(() => {
-      if (document.body) {
+      if (document.body && this.container) {
         document.body.appendChild(this.container);
         console.log('[MockMonkey] 面板容器已添加到页面');
       } else {
@@ -363,12 +363,13 @@ export class Panel {
     const dragHandle = this.shadowRoot.querySelector('[data-drag-handle="panel"]');
     if (!dragHandle) return;
 
-    dragHandle.addEventListener('mousedown', (e) => {
+    dragHandle.addEventListener('mousedown', (e: Event) => {
+      const mouseEvent = e as MouseEvent;
       // Only respond to left click
-      if (e.button !== 0) return;
+      if (mouseEvent.button !== 0) return;
 
       // If clicking close button, don't trigger drag
-      if ((e.target as HTMLElement).closest('[data-action="close"]')) return;
+      if ((mouseEvent.target as HTMLElement).closest('[data-action="close"]')) return;
 
       this.panelDragStartTime = Date.now();
       this.panelHasMoved = false;
@@ -378,8 +379,8 @@ export class Panel {
       if (!panel) return;
 
       const rect = panel.getBoundingClientRect();
-      this.panelDragOffset.x = e.clientX - rect.left;
-      this.panelDragOffset.y = e.clientY - rect.top;
+      this.panelDragOffset.x = mouseEvent.clientX - rect.left;
+      this.panelDragOffset.y = mouseEvent.clientY - rect.top;
 
       // Add global event listeners
       document.addEventListener('mousemove', this.handlePanelMouseMove);
@@ -662,9 +663,9 @@ export class Panel {
     // Prevent wheel event propagation from panel to main page
     const panel = this.shadowRoot.querySelector('.mm-panel');
     if (panel) {
-      panel.addEventListener('wheel', (e: WheelEvent) => {
+      panel.addEventListener('wheel', (e: Event) => {
         e.stopPropagation();
-      }, { capture: true, passive: true });
+      }, { capture: true, passive: true } as AddEventListenerOptions);
     }
 
     // Bind panel drag events
@@ -937,7 +938,7 @@ export class Panel {
     listContainer.querySelectorAll('[data-action="toggle"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
-        if (id) this.onToggleRule(id);
+        if (id) (this as any).onToggleRule(id);
       });
     });
 
@@ -954,7 +955,7 @@ export class Panel {
     listContainer.querySelectorAll('[data-action="delete"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
-        if (id) this.onDeleteRule(id);
+        if (id) (this as any).onDeleteRule(id);
       });
     });
   }
