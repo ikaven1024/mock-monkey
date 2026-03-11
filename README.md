@@ -32,6 +32,14 @@ English · [中文文档](./README.zh-CN.md)
 - 🔌 **Network Monitoring** - Real-time request logging, quickly create rules from requests
 - 📥📤 **Import/Export** - Backup and restore rules in bulk
 
+## Demo
+
+📺 **Watch MockMonkey in action** - This demo uses the Swagger Petstore API to show how to intercept and mock API responses with just a few clicks:
+
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/05e7731b-b686-4bdc-9c71-835076ae51c4" width="600" controls></video>
+</p>
+
 ## Project Structure
 
 ```

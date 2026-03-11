@@ -32,6 +32,14 @@
 - 🔌 **网络监控** - 实时请求日志，一键从请求创建 Mock 规则
 - 📥📤 **导入导出** - 批量备份和恢复规则
 
+## 演示视频
+
+📺 **观看 MockMonkey 实际演示** - 本演示使用 Swagger Petstore API 展示如何通过简单几步拦截和 Mock API 接口：
+
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/05e7731b-b686-4bdc-9c71-835076ae51c4" width="600" controls></video>
+</p>
+
 ## 项目结构
 
 ```
