@@ -107,10 +107,24 @@ npm run test:coverage
 
 ### 1. Install Script
 
+**Option 1: Quick Install (Recommended)**
+- Click the **🐵 Install Script** badge at the top to install directly from the latest Release
+
+**Option 2: Manual Install**
 1. Install [Tampermonkey](https://www.tampermonkey.net/) browser extension
-2. Open Tampermonkey management panel
-3. Click "Add New Script"
-4. Copy and paste the content of `mock-monkey.user.js`
+2. Download [mock-monkey.user.js](https://github.com/ikaven1024/mock-monkey/releases/latest/download/mock-monkey.user.js) from the latest Release
+3. Open Tampermonkey management panel
+4. Click "Add New Script"
+5. Copy and paste the content of the downloaded file
+
+**Option 3: Build Locally**
+```bash
+git clone https://github.com/ikaven1024/mock-monkey.git
+cd mock-monkey
+npm install
+npm run build
+# Then copy mock-monkey.user.js to Tampermonkey
+```
 
 ### 2. Using Visual Interface
 

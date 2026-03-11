@@ -107,10 +107,24 @@ npm run test:coverage
 
 ### 1. 安装脚本
 
+**方式一：快速安装（推荐）**
+- 点击页面顶部的 **🐵 Install Script** 徽章，直接从最新 Release 安装
+
+**方式二：手动安装**
 1. 安装 [Tampermonkey](https://www.tampermonkey.net/) 浏览器扩展
-2. 打开 Tampermonkey 管理面板
-3. 点击「添加新脚本」
-4. 复制 `mock-monkey.user.js` 的内容并保存
+2. 从最新 [Release](https://github.com/ikaven1024/mock-monkey/releases/latest/download/mock-monkey.user.js) 下载 `mock-monkey.user.js`
+3. 打开 Tampermonkey 管理面板
+4. 点击「添加新脚本」
+5. 复制下载文件的内容并保存
+
+**方式三：本地构建**
+```bash
+git clone https://github.com/ikaven1024/mock-monkey.git
+cd mock-monkey
+npm install
+npm run build
+# 然后将 mock-monkey.user.js 复制到 Tampermonkey
+```
 
 ### 2. 使用可视化界面
 
