@@ -496,8 +496,173 @@
       });
     }
   }
+  const translations = {
+    zh: {
+      common: {
+        add: "添加",
+        edit: "编辑",
+        delete: "删除",
+        enable: "启用",
+        disable: "禁用",
+        cancel: "取消",
+        save: "保存",
+        details: "详情"
+      },
+      tabs: {
+        rules: "规则",
+        add: "添加",
+        network: "网络"
+      },
+      rules: {
+        count: "条规则",
+        export: "导出",
+        import: "导入",
+        empty: "暂无 Mock 规则",
+        startConfig: '点击<span class="mm-link" data-action="go-to-add">"添加规则"</span>开始配置',
+        status: "状态",
+        delay: "延迟"
+      },
+      form: {
+        urlPattern: "URL 模式 *",
+        urlPatternHint: "支持字符串或正则表达式（格式：/pattern/flags）",
+        responseData: "响应数据 (JSON) *",
+        responseDataPlaceholder: '{"code": 200, "data": {}}',
+        delay: "延迟 (ms)",
+        status: "状态码",
+        addRule: "添加规则",
+        saveRule: "保存规则",
+        cancelEdit: "取消",
+        importError: "导入文件格式错误：必须是数组",
+        jsonError: "响应数据 JSON 格式错误",
+        regexError: "正则表达式格式错误"
+      },
+      network: {
+        count: "条请求",
+        clear: "清空",
+        empty: "暂无网络请求",
+        emptyHint: "发起请求后会在此显示",
+        createMock: "创建 Mock 规则",
+        responseData: "响应数据"
+      }
+    },
+    en: {
+      common: {
+        add: "Add",
+        edit: "Edit",
+        delete: "Delete",
+        enable: "Enable",
+        disable: "Disable",
+        cancel: "Cancel",
+        save: "Save",
+        details: "Details"
+      },
+      tabs: {
+        rules: "Rules",
+        add: "Add",
+        network: "Network"
+      },
+      rules: {
+        count: "rules",
+        export: "Export",
+        import: "Import",
+        empty: "No Mock rules yet",
+        startConfig: 'Click <span class="mm-link" data-action="go-to-add">"Add Rule"</span> to start',
+        status: "Status",
+        delay: "Delay"
+      },
+      form: {
+        urlPattern: "URL Pattern *",
+        urlPatternHint: "Support string or regex (format: /pattern/flags)",
+        responseData: "Response Data (JSON) *",
+        responseDataPlaceholder: '{"code": 200, "data": {}}',
+        delay: "Delay (ms)",
+        status: "Status Code",
+        addRule: "Add Rule",
+        saveRule: "Save Rule",
+        cancelEdit: "Cancel",
+        importError: "Import file format error: must be an array",
+        jsonError: "Response data JSON format error",
+        regexError: "Regex format error"
+      },
+      network: {
+        count: "requests",
+        clear: "Clear",
+        empty: "No network requests yet",
+        emptyHint: "Requests will appear here",
+        createMock: "Create Mock",
+        responseData: "Response Data"
+      }
+    }
+  };
+  class I18n {
+    constructor() {
+      this.STORAGE_KEY = "mock-monkey-language";
+      this._language = this.loadLanguage();
+    }
+    /**
+     * Get current language
+     */
+    getLanguage() {
+      return this._language;
+    }
+    /**
+     * Set language and save to localStorage
+     */
+    setLanguage(lang) {
+      this._language = lang;
+      this.saveLanguage(lang);
+    }
+    /**
+     * Toggle language between zh and en
+     */
+    toggleLanguage() {
+      this._language = this._language === "zh" ? "en" : "zh";
+      this.saveLanguage(this._language);
+    }
+    /**
+     * Get translation text by key path
+     * Supports nested key path like 'common.add', 'tabs.rules'
+     */
+    t(key) {
+      const keys = key.split(".");
+      let value = translations[this._language];
+      for (const k of keys) {
+        if (value && typeof value === "object" && k in value) {
+          value = value[k];
+        } else {
+          console.warn(`[MockMonkey i18n] Translation key not found: ${key}`);
+          return key;
+        }
+      }
+      return typeof value === "string" ? value : key;
+    }
+    /**
+     * Load language from localStorage
+     */
+    loadLanguage() {
+      try {
+        const saved = localStorage.getItem(this.STORAGE_KEY);
+        if (saved === "zh" || saved === "en") {
+          return saved;
+        }
+      } catch (e) {
+        console.warn("[MockMonkey i18n] Failed to load language from localStorage:", e);
+      }
+      return "zh";
+    }
+    /**
+     * Save language to localStorage
+     */
+    saveLanguage(lang) {
+      try {
+        localStorage.setItem(this.STORAGE_KEY, lang);
+      } catch (e) {
+        console.warn("[MockMonkey i18n] Failed to save language to localStorage:", e);
+      }
+    }
+  }
   class Panel {
-    // Currently editing rule ID
+    // i18n instance
     constructor(onAddRule, onUpdateRule, onCreateFromRequest) {
       this.onAddRule = onAddRule;
       this.onUpdateRule = onUpdateRule;
@@ -584,6 +749,7 @@
         }, 100);
         this.savePanelPosition();
       };
+      this.i18n = new I18n();
       this.loadButtonPosition();
     }
     /**
@@ -637,21 +803,24 @@
       panel.innerHTML = `
       <div class="mm-header" data-drag-handle="panel">
         <h2 class="mm-title">MockMonkey</h2>
-        <button class="mm-close-btn" data-action="close">×</button>
+        <div class="mm-header-actions">
+          <button class="mm-lang-btn" data-action="toggle-lang" title="${this.i18n.getLanguage() === "zh" ? "Switch to English" : "切换中文"}">${this.i18n.getLanguage() === "zh" ? "EN" : "中"}</button>
+          <button class="mm-close-btn" data-action="close">×</button>
+        </div>
       </div>
 
       <div class="mm-tabs">
-        <button class="mm-tab mm-tab--active" data-tab="rules">规则</button>
-        <button class="mm-tab" data-tab="add" data-tab-label>添加</button>
-        <button class="mm-tab" data-tab="requests">网络</button>
+        <button class="mm-tab mm-tab--active" data-tab="rules">${this.i18n.t("tabs.rules")}</button>
+        <button class="mm-tab" data-tab="add" data-tab-label>${this.i18n.t("tabs.add")}</button>
+        <button class="mm-tab" data-tab="requests">${this.i18n.t("tabs.network")}</button>
       </div>
 
       <div class="mm-content">
         <div class="mm-tab-content mm-tab-content--active" data-content="rules">
           <div class="mm-rules-header">
-            <span class="mm-rules-count">0 条规则</span>
-            <button class="mm-btn mm-btn--small" data-action="export">导出</button>
-            <button class="mm-btn mm-btn--small" data-action="import">导入</button>
+            <span class="mm-rules-count">0 ${this.i18n.t("rules.count")}</span>
+            <button class="mm-btn mm-btn--small" data-action="export">${this.i18n.t("rules.export")}</button>
+            <button class="mm-btn mm-btn--small" data-action="import">${this.i18n.t("rules.import")}</button>
           </div>
           <div class="mm-rules-list" data-rules-list></div>
         </div>
@@ -660,38 +829,38 @@
           <form class="mm-form" data-action="add-rule">
             <input type="hidden" name="editing-id" value="">
             <div class="mm-form-group">
-              <label class="mm-label">URL 模式 *</label>
+              <label class="mm-label">${this.i18n.t("form.urlPattern")}</label>
               <input class="mm-input" name="pattern" placeholder="/api/user" required>
-              <span class="mm-hint">支持字符串或正则表达式（格式：/pattern/flags）</span>
+              <span class="mm-hint">${this.i18n.t("form.urlPatternHint")}</span>
             </div>
 
             <div class="mm-form-group">
-              <label class="mm-label">响应数据 (JSON) *</label>
-              <textarea class="mm-textarea" name="response" rows="6" placeholder='{"code": 200, "data": {}}' required></textarea>
+              <label class="mm-label">${this.i18n.t("form.responseData")}</label>
+              <textarea class="mm-textarea" name="response" rows="6" placeholder='${this.i18n.t("form.responseDataPlaceholder")}' required></textarea>
             </div>
 
             <div class="mm-form-row">
               <div class="mm-form-group">
-                <label class="mm-label">延迟 (ms)</label>
+                <label class="mm-label">${this.i18n.t("form.delay")}</label>
                 <input class="mm-input" type="number" name="delay" value="0" min="0">
               </div>
               <div class="mm-form-group">
-                <label class="mm-label">状态码</label>
+                <label class="mm-label">${this.i18n.t("form.status")}</label>
                 <input class="mm-input" type="number" name="status" value="200" min="100" max="599">
               </div>
             </div>
 
             <div class="mm-form-actions">
-              <button type="button" class="mm-btn" data-action="cancel-edit" style="display: none;">取消</button>
-              <button type="submit" class="mm-btn mm-btn--primary" data-submit-btn>添加规则</button>
+              <button type="button" class="mm-btn" data-action="cancel-edit" style="display: none;">${this.i18n.t("form.cancelEdit")}</button>
+              <button type="submit" class="mm-btn mm-btn--primary" data-submit-btn>${this.i18n.t("form.addRule")}</button>
             </div>
           </form>
         </div>
 
         <div class="mm-tab-content" data-content="requests">
           <div class="mm-rules-header">
-            <span class="mm-rules-count">0 条请求</span>
-            <button class="mm-btn mm-btn--small" data-action="clear-requests">清空</button>
+            <span class="mm-rules-count">0 ${this.i18n.t("network.count")}</span>
+            <button class="mm-btn mm-btn--small" data-action="clear-requests">${this.i18n.t("network.clear")}</button>
           </div>
           <div class="mm-requests-list" data-requests-list></div>
         </div>
@@ -897,7 +1066,7 @@
           const content = event.target?.result;
           const importedRules = JSON.parse(content);
           if (!Array.isArray(importedRules)) {
-            throw new Error("导入文件格式错误：必须是数组");
+            throw new Error(this.i18n.t("form.importError"));
           }
           let successCount = 0;
           importedRules.forEach((ruleData) => {
@@ -938,6 +1107,9 @@
     bindEvents() {
       if (!this.shadowRoot) return;
       this.shadowRoot.querySelector('[data-action="close"]')?.addEventListener("click", () => this.hide());
+      this.shadowRoot.querySelector('[data-action="toggle-lang"]')?.addEventListener("click", () => {
+        this.toggleLanguage();
+      });
       this.shadowRoot.querySelectorAll(".mm-tab").forEach((tab) => {
         tab.addEventListener("click", (e) => {
           const target = e.currentTarget;
@@ -993,6 +1165,60 @@
       });
     }
     /**
+     * Toggle language and update UI
+     */
+    toggleLanguage() {
+      this.i18n.toggleLanguage();
+      this.updateLanguage();
+    }
+    /**
+     * Update all UI text with current language
+     */
+    updateLanguage() {
+      if (!this.shadowRoot) return;
+      const langBtn = this.shadowRoot.querySelector('[data-action="toggle-lang"]');
+      if (langBtn) {
+        const lang = this.i18n.getLanguage();
+        langBtn.textContent = lang === "zh" ? "EN" : "中";
+        langBtn.title = lang === "zh" ? "Switch to English" : "切换中文";
+      }
+      this.shadowRoot.querySelectorAll(".mm-tab").forEach((tab) => {
+        const tabName = tab.dataset.tab;
+        if (tabName === "rules") {
+          tab.textContent = this.i18n.t("tabs.rules");
+        } else if (tabName === "add") {
+          const isEditing = this.editingRuleId !== null;
+          tab.textContent = isEditing ? this.i18n.t("common.edit") : this.i18n.t("tabs.add");
+        } else if (tabName === "requests") {
+          tab.textContent = this.i18n.t("tabs.network");
+        }
+      });
+      const urlPatternLabel = this.shadowRoot.querySelector(".mm-form-group:first-child .mm-label");
+      if (urlPatternLabel) urlPatternLabel.textContent = this.i18n.t("form.urlPattern");
+      const urlPatternHint = this.shadowRoot.querySelector(".mm-form-group:first-child .mm-hint");
+      if (urlPatternHint) urlPatternHint.textContent = this.i18n.t("form.urlPatternHint");
+      const responseLabel = this.shadowRoot.querySelector(".mm-form-group:nth-child(2) .mm-label");
+      if (responseLabel) responseLabel.textContent = this.i18n.t("form.responseData");
+      const delayLabel = this.shadowRoot.querySelector(".mm-form-row .mm-form-group:first-child .mm-label");
+      if (delayLabel) delayLabel.textContent = this.i18n.t("form.delay");
+      const statusLabel = this.shadowRoot.querySelector(".mm-form-row .mm-form-group:last-child .mm-label");
+      if (statusLabel) statusLabel.textContent = this.i18n.t("form.status");
+      const cancelBtn = this.shadowRoot.querySelector('[data-action="cancel-edit"]');
+      if (cancelBtn) cancelBtn.textContent = this.i18n.t("form.cancelEdit");
+      const submitBtn = this.shadowRoot.querySelector("[data-submit-btn]");
+      if (submitBtn) {
+        submitBtn.textContent = this.editingRuleId ? this.i18n.t("form.saveRule") : this.i18n.t("form.addRule");
+      }
+      const exportBtn = this.shadowRoot.querySelector('[data-action="export"]');
+      if (exportBtn) exportBtn.textContent = this.i18n.t("rules.export");
+      const importBtn = this.shadowRoot.querySelector('[data-action="import"]');
+      if (importBtn) importBtn.textContent = this.i18n.t("rules.import");
+      const clearRequestsBtn = this.shadowRoot.querySelector('[data-action="clear-requests"]');
+      if (clearRequestsBtn) clearRequestsBtn.textContent = this.i18n.t("network.clear");
+      this.updateRules(this.currentRules);
+      this.updateNetworkRequests(this.networkRequests);
+    }
+    /**
      * Handle add rule
      */
     handleAddRule(e) {
@@ -1011,7 +1237,7 @@
             parsedPattern = new RegExp(match[1], match[2]);
           }
         } catch (err) {
-          alert("正则表达式格式错误");
+          alert(this.i18n.t("form.regexError"));
           return;
         }
       }
@@ -1019,7 +1245,7 @@
       try {
         response = JSON.parse(responseStr);
       } catch (err) {
-        alert("响应数据 JSON 格式错误");
+        alert(this.i18n.t("form.jsonError"));
         return;
       }
       const ruleData = {
@@ -1048,9 +1274,9 @@
       const tabLabel = this.shadowRoot.querySelector("[data-tab-label]");
       const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]');
       if (form) form.reset();
-      if (submitBtn) submitBtn.textContent = "添加规则";
+      if (submitBtn) submitBtn.textContent = this.i18n.t("form.addRule");
       if (cancelBtn) cancelBtn.style.display = "none";
-      if (tabLabel) tabLabel.textContent = "添加";
+      if (tabLabel) tabLabel.textContent = this.i18n.t("tabs.add");
       if (editingIdInput) editingIdInput.value = "";
     }
     /**
@@ -1073,9 +1299,9 @@
       if (delayInput) delayInput.value = rule.delay.toString();
       if (statusInput) statusInput.value = rule.status.toString();
       if (editingIdInput) editingIdInput.value = rule.id;
-      if (submitBtn) submitBtn.textContent = "保存规则";
+      if (submitBtn) submitBtn.textContent = this.i18n.t("form.saveRule");
       if (cancelBtn) cancelBtn.style.display = "";
-      if (tabLabel) tabLabel.textContent = "编辑";
+      if (tabLabel) tabLabel.textContent = this.i18n.t("common.edit");
       this.switchTab("add");
     }
     /**
@@ -1088,13 +1314,13 @@
       const countEl = this.shadowRoot.querySelector(".mm-rules-count");
       if (!listContainer) return;
       if (countEl) {
-        countEl.textContent = `${rules.length} 条规则`;
+        countEl.textContent = `${rules.length} ${this.i18n.t("rules.count")}`;
       }
       if (rules.length === 0) {
         listContainer.innerHTML = `
         <div class="mm-empty">
-          <p>暂无 Mock 规则</p>
-          <p class="mm-hint">点击<span class="mm-link" data-action="go-to-add">"添加规则"</span>开始配置</p>
+          <p>${this.i18n.t("rules.empty")}</p>
+          <p class="mm-hint">${this.i18n.t("rules.startConfig")}</p>
         </div>
       `;
         listContainer.querySelector('[data-action="go-to-add"]')?.addEventListener("click", () => {
@@ -1108,18 +1334,18 @@
         <div class="mm-rule-header">
           <span class="mm-rule-pattern" title="${this.escapeHtmlAttr(rule.patternStr)}">${this.escapeHtml(rule.patternStr)}</span>
           <div class="mm-rule-actions">
-            <button class="mm-btn-icon" data-action="toggle" data-id="${rule.id}" title="${rule.enabled ? "禁用" : "启用"}">
+            <button class="mm-btn-icon" data-action="toggle" data-id="${rule.id}" title="${rule.enabled ? this.i18n.t("common.disable") : this.i18n.t("common.enable")}">
               ${rule.enabled ? "🟢" : "⚫"}
             </button>
-            <button class="mm-btn-icon" data-action="edit" data-id="${rule.id}" title="编辑">✏️</button>
-            <button class="mm-btn-icon" data-action="delete" data-id="${rule.id}" title="删除">🗑️</button>
+            <button class="mm-btn-icon" data-action="edit" data-id="${rule.id}" title="${this.i18n.t("common.edit")}">✏️</button>
+            <button class="mm-btn-icon" data-action="delete" data-id="${rule.id}" title="${this.i18n.t("common.delete")}">🗑️</button>
           </div>
         </div>
         <details class="mm-rule-details">
-          <summary class="mm-rule-summary">详情</summary>
+          <summary class="mm-rule-summary">${this.i18n.t("common.details")}</summary>
           <div class="mm-rule-meta">
-            <span>状态: ${rule.status}</span>
-            <span>延迟: ${rule.delay}ms</span>
+            <span>${this.i18n.t("rules.status")}: ${rule.status}</span>
+            <span>${this.i18n.t("rules.delay")}: ${rule.delay}ms</span>
           </div>
           <pre class="mm-rule-response">${this.escapeHtml(JSON.stringify(rule.response, null, 2))}</pre>
         </details>
@@ -1159,13 +1385,13 @@
       const countEl = this.shadowRoot.querySelector('[data-content="requests"] .mm-rules-count');
       if (!listContainer) return;
       if (countEl) {
-        countEl.textContent = `${requests.length} 条请求`;
+        countEl.textContent = `${requests.length} ${this.i18n.t("network.count")}`;
       }
       if (requests.length === 0) {
         listContainer.innerHTML = `
         <div class="mm-empty">
-          <p>暂无网络请求</p>
-          <p class="mm-hint">发起请求后会在此显示</p>
+          <p>${this.i18n.t("network.empty")}</p>
+          <p class="mm-hint">${this.i18n.t("network.emptyHint")}</p>
         </div>
       `;
         return;
@@ -1183,13 +1409,13 @@
           <span class="mm-request-status" data-status="${req.status ? Math.floor(req.status / 100).toString() : ""}">${req.status ?? "PENDING"}</span>
           <span class="mm-request-duration">${req.duration ? `${req.duration}ms` : "-"}</span>
           <span class="mm-request-time">${new Date(req.timestamp).toLocaleTimeString()}</span>
-          <button class="mm-btn mm-btn--small mm-btn-create-mock" data-action="create-mock" data-request-id="${req.id}" title="创建 Mock 规则">
+          <button class="mm-btn mm-btn--small mm-btn-create-mock" data-action="create-mock" data-request-id="${req.id}" title="${this.i18n.t("network.createMock")}">
             + Mock
           </button>
         </div>
         ${req.response !== void 0 ? `
           <details class="mm-request-details">
-            <summary class="mm-request-summary">响应数据</summary>
+            <summary class="mm-request-summary">${this.i18n.t("network.responseData")}</summary>
             <pre class="mm-request-response">${this.escapeHtml(JSON.stringify(req.response, null, 2))}</pre>
           </details>
         ` : ""}
@@ -1389,6 +1615,30 @@
 
       .mm-close-btn:hover {
         background: #f5f5f5;
+      }
+
+      .mm-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .mm-lang-btn {
+        background: #f5f5f5;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 45px;
+        text-align: center;
+      }
+
+      .mm-lang-btn:hover {
+        background: #e5e7eb;
+        border-color: #9ca3af;
       }
 
       .mm-tabs {
