@@ -40,77 +40,6 @@
   <video src="https://github.com/user-attachments/assets/05e7731b-b686-4bdc-9c71-835076ae51c4" width="600" controls></video>
 </p>
 
-## 项目结构
-
-```
-MockMonkey/
-├── src/
-│   ├── core/
-│   │   ├── MockManager.ts       # Mock 规则管理器
-│   │   ├── Interceptor.ts       # 请求拦截器
-│   │   └── RequestRecorder.ts   # 网络请求记录器
-│   ├── ui/
-│   │   └── Panel.ts             # 可视化管理面板
-│   ├── types/
-│   │   └── index.ts             # TypeScript 类型定义
-│   └── index.ts                 # 入口文件
-├── test/
-│   ├── MockManager.test.ts      # 规则管理器测试
-│   ├── Interceptor.test.ts      # 拦截器测试
-│   ├── RequestRecorder.test.ts  # 请求记录器测试
-│   └── setup.ts                 # 测试环境设置
-├── vendor/
-│   └── mock.js                  # Mock.js 库
-├── .github/
-│   └── workflows/
-│       └── ci.yml               # CI/CD 工作流（构建并创建 Release）
-├── vite.config.ts               # Vite 配置
-├── vitest.config.ts             # Vitest 配置
-├── tsconfig.json                # TypeScript 配置
-└── package.json                 # 项目配置
-```
-
-> **注意**：`mock-monkey.user.js` 由源码构建生成，并自动上传到 [GitHub Releases](https://github.com/ikaven1024/mock-monkey/releases)。可从上方徽章安装，或运行 `npm run build` 本地生成。
-
-## 开发
-
-### 安装依赖
-
-```bash
-npm install
-```
-
-### 构建
-
-```bash
-npm run build
-```
-
-### 类型检查
-
-```bash
-npm run type-check
-```
-
-### 监听模式（开发时自动构建）
-
-```bash
-npm run dev
-```
-
-### 测试
-
-```bash
-# 运行单元测试
-npm run test
-
-# 运行测试 UI 界面
-npm run test:ui
-
-# 生成测试覆盖率报告
-npm run test:coverage
-```
-
 ## 使用方法
 
 ### 1. 安装脚本
@@ -303,6 +232,77 @@ MockMonkey 内置了 Mock.js 库，支持占位符语法生成随机数据：
     "status": "@boolean"
   }]
 }
+```
+
+## 项目结构
+
+```
+MockMonkey/
+├── src/
+│   ├── core/
+│   │   ├── MockManager.ts       # Mock 规则管理器
+│   │   ├── Interceptor.ts       # 请求拦截器
+│   │   └── RequestRecorder.ts   # 网络请求记录器
+│   ├── ui/
+│   │   └── Panel.ts             # 可视化管理面板
+│   ├── types/
+│   │   └── index.ts             # TypeScript 类型定义
+│   └── index.ts                 # 入口文件
+├── test/
+│   ├── MockManager.test.ts      # 规则管理器测试
+│   ├── Interceptor.test.ts      # 拦截器测试
+│   ├── RequestRecorder.test.ts  # 请求记录器测试
+│   └── setup.ts                 # 测试环境设置
+├── vendor/
+│   └── mock.js                  # Mock.js 库
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # CI/CD 工作流（构建并创建 Release）
+├── vite.config.ts               # Vite 配置
+├── vitest.config.ts             # Vitest 配置
+├── tsconfig.json                # TypeScript 配置
+└── package.json                 # 项目配置
+```
+
+> **注意**：`mock-monkey.user.js` 由源码构建生成，并自动上传到 [GitHub Releases](https://github.com/ikaven1024/mock-monkey/releases)。可从上方徽章安装，或运行 `npm run build` 本地生成。
+
+## 开发
+
+### 安装依赖
+
+```bash
+npm install
+```
+
+### 构建
+
+```bash
+npm run build
+```
+
+### 类型检查
+
+```bash
+npm run type-check
+```
+
+### 监听模式（开发时自动构建）
+
+```bash
+npm run dev
+```
+
+### 测试
+
+```bash
+# 运行单元测试
+npm run test
+
+# 运行测试 UI 界面
+npm run test:ui
+
+# 生成测试覆盖率报告
+npm run test:coverage
 ```
 
 ## License

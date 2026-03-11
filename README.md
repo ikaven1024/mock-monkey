@@ -40,77 +40,6 @@ English · [中文文档](./README.zh-CN.md)
   <video src="https://github.com/user-attachments/assets/05e7731b-b686-4bdc-9c71-835076ae51c4" width="600" controls></video>
 </p>
 
-## Project Structure
-
-```
-MockMonkey/
-├── src/
-│   ├── core/
-│   │   ├── MockManager.ts       # Mock rule manager
-│   │   ├── Interceptor.ts       # Request interceptor
-│   │   └── RequestRecorder.ts   # Network request recorder
-│   ├── ui/
-│   │   └── Panel.ts             # Visual management panel
-│   ├── types/
-│   │   └── index.ts             # TypeScript type definitions
-│   └── index.ts                 # Entry point
-├── test/
-│   ├── MockManager.test.ts      # Rule manager tests
-│   ├── Interceptor.test.ts      # Interceptor tests
-│   ├── RequestRecorder.test.ts  # Request recorder tests
-│   └── setup.ts                 # Test environment setup
-├── vendor/
-│   └── mock.js                  # Mock.js library
-├── .github/
-│   └── workflows/
-│       └── ci.yml               # CI/CD workflow (builds and creates releases)
-├── vite.config.ts               # Vite configuration
-├── vitest.config.ts             # Vitest configuration
-├── tsconfig.json                # TypeScript configuration
-└── package.json                 # Project configuration
-```
-
-> **Note**: `mock-monkey.user.js` is built from source and automatically uploaded to [GitHub Releases](https://github.com/ikaven1024/mock-monkey/releases). Install it from the badge above or run `npm run build` to generate locally.
-
-## Development
-
-### Install Dependencies
-
-```bash
-npm install
-```
-
-### Build
-
-```bash
-npm run build
-```
-
-### Type Check
-
-```bash
-npm run type-check
-```
-
-### Watch Mode (auto-build during development)
-
-```bash
-npm run dev
-```
-
-### Testing
-
-```bash
-# Run unit tests
-npm run test
-
-# Run test UI
-npm run test:ui
-
-# Generate test coverage report
-npm run test:coverage
-```
-
 ## Usage
 
 ### 1. Install Script
@@ -303,6 +232,77 @@ For more placeholders, see [Mock.js Documentation](http://mockjs.com/examples.ht
     "status": "@boolean"
   }]
 }
+```
+
+## Project Structure
+
+```
+MockMonkey/
+├── src/
+│   ├── core/
+│   │   ├── MockManager.ts       # Mock rule manager
+│   │   ├── Interceptor.ts       # Request interceptor
+│   │   └── RequestRecorder.ts   # Network request recorder
+│   ├── ui/
+│   │   └── Panel.ts             # Visual management panel
+│   ├── types/
+│   │   └── index.ts             # TypeScript type definitions
+│   └── index.ts                 # Entry point
+├── test/
+│   ├── MockManager.test.ts      # Rule manager tests
+│   ├── Interceptor.test.ts      # Interceptor tests
+│   ├── RequestRecorder.test.ts  # Request recorder tests
+│   └── setup.ts                 # Test environment setup
+├── vendor/
+│   └── mock.js                  # Mock.js library
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # CI/CD workflow (builds and creates releases)
+├── vite.config.ts               # Vite configuration
+├── vitest.config.ts             # Vitest configuration
+├── tsconfig.json                # TypeScript configuration
+└── package.json                 # Project configuration
+```
+
+> **Note**: `mock-monkey.user.js` is built from source and automatically uploaded to [GitHub Releases](https://github.com/ikaven1024/mock-monkey/releases). Install it from the badge above or run `npm run build` to generate locally.
+
+## Development
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Build
+
+```bash
+npm run build
+```
+
+### Type Check
+
+```bash
+npm run type-check
+```
+
+### Watch Mode (auto-build during development)
+
+```bash
+npm run dev
+```
+
+### Testing
+
+```bash
+# Run unit tests
+npm run test
+
+# Run test UI
+npm run test:ui
+
+# Generate test coverage report
+npm run test:coverage
 ```
 
 ## License
