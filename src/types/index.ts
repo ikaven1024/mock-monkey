@@ -1,35 +1,35 @@
 /**
- * Mock 规则配置选项
+ * Mock rule configuration options
  */
 export interface MockRuleOptions {
-  /** 响应延迟（毫秒） */
+  /** Response delay (ms) */
   delay?: number;
-  /** HTTP 状态码 */
+  /** HTTP status code */
   status?: number;
-  /** 响应头 */
+  /** Response headers */
   headers?: Record<string, string>;
 }
 
 /**
- * Mock 规则
+ * Mock rule
  */
 export interface MockRule {
-  /** URL 匹配模式（字符串或正则） */
+  /** URL matching pattern (string or RegExp) */
   pattern: string | RegExp;
-  /** 响应数据 */
+  /** Response data */
   response: unknown;
-  /** 配置选项 */
+  /** Configuration options */
   options: MockRuleOptions;
-  /** 规则 ID */
+  /** Rule ID */
   id: string;
-  /** 是否启用 */
+  /** Whether enabled */
   enabled: boolean;
-  /** 创建时间 */
+  /** Creation time */
   createdAt: number;
 }
 
 /**
- * Mock 规则创建参数
+ * Mock rule creation parameters
  */
 export interface CreateMockRuleParams {
   pattern: string | RegExp;
@@ -38,7 +38,7 @@ export interface CreateMockRuleParams {
 }
 
 /**
- * XHR 请求信息
+ * XHR request info
  */
 interface XhrRequestInfo {
   method: string;
@@ -47,7 +47,7 @@ interface XhrRequestInfo {
 }
 
 /**
- * Fetch 请求信息
+ * Fetch request info
  */
 interface FetchRequestInfo {
   url: string | Request;
@@ -55,29 +55,29 @@ interface FetchRequestInfo {
 }
 
 /**
- * 网络请求记录
+ * Network request record
  */
 export interface NetworkRequest {
-  /** 请求 ID */
+  /** Request ID */
   id: string;
-  /** 请求方法 */
+  /** Request method */
   method: string;
-  /** 请求 URL */
+  /** Request URL */
   url: string;
-  /** 请求体 */
+  /** Request body */
   body?: string;
-  /** 请求类型 */
+  /** Request type */
   type: 'XHR' | 'Fetch';
-  /** 是否被 Mock */
+  /** Whether mocked */
   mocked: boolean;
-  /** 匹配的规则 ID（如果被 Mock） */
+  /** Matched rule ID (if mocked) */
   ruleId?: string;
-  /** 响应状态码 */
+  /** Response status code */
   status?: number;
-  /** 响应数据 */
+  /** Response data */
   response?: unknown;
-  /** 请求时间戳 */
+  /** Request timestamp */
   timestamp: number;
-  /** 请求耗时（毫秒） */
+  /** Request duration (ms) */
   duration?: number;
 }

@@ -1,19 +1,19 @@
 import type { NetworkRequest } from '../types';
 
 /**
- * 网络请求记录器
+ * Network request recorder
  */
 export class RequestRecorder {
   private requests: NetworkRequest[] = [];
-  private maxRecords = 500; // 最多保存 500 条记录
+  private maxRecords = 500; // Maximum 500 records
   private listeners: Set<(requests: NetworkRequest[]) => void> = new Set();
 
   /**
-   * 添加请求记录
+   * Add request record
    */
   addRequest(request: NetworkRequest): void {
     this.requests.unshift(request);
-    // 限制记录数量
+    // Limit record count
     if (this.requests.length > this.maxRecords) {
       this.requests = this.requests.slice(0, this.maxRecords);
     }
@@ -21,7 +21,7 @@ export class RequestRecorder {
   }
 
   /**
-   * 更新请求记录（用于更新响应等信息）
+   * Update request record (for updating response info, etc.)
    */
   updateRequest(id: string, updates: Partial<NetworkRequest>): void {
     const index = this.requests.findIndex((r) => r.id === id);
@@ -32,14 +32,14 @@ export class RequestRecorder {
   }
 
   /**
-   * 获取所有请求记录
+   * Get all request records
    */
   getRequests(): NetworkRequest[] {
     return [...this.requests];
   }
 
   /**
-   * 清空所有记录
+   * Clear all records
    */
   clear(): void {
     this.requests = [];
@@ -47,25 +47,25 @@ export class RequestRecorder {
   }
 
   /**
-   * 订阅请求变化
+   * Subscribe to request changes
    */
   subscribe(listener: (requests: NetworkRequest[]) => void): () => void {
     this.listeners.add(listener);
-    // 返回取消订阅函数
+    // Return unsubscribe function
     return () => {
       this.listeners.delete(listener);
     };
   }
 
   /**
-   * 通知所有监听器
+   * Notify all listeners
    */
   private notifyListeners(): void {
     this.listeners.forEach((listener) => listener([...this.requests]));
   }
 
   /**
-   * 生成唯一 ID
+   * Generate unique ID
    */
   static generateId(): string {
     return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

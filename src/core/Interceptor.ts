@@ -2,7 +2,7 @@ import type { MockRule } from '../types';
 import { RequestRecorder } from './RequestRecorder';
 
 /**
- * 请求拦截器 - 拦截 XHR 和 Fetch 请求
+ * Request interceptor - Intercepts XHR and Fetch requests
  */
 export class Interceptor {
   private xhrOpen: typeof XMLHttpRequest.prototype.open;
@@ -19,24 +19,24 @@ export class Interceptor {
   }
 
   /**
-   * 将相对 URL 转换为完整的 URL
+   * Convert relative URL to full URL
    */
   private normalizeUrl(url: string): string {
     try {
-      // 如果已经是完整的 URL，直接返回
+      // If already a full URL, return directly
       if (url.startsWith('http://') || url.startsWith('https://')) {
         return url;
       }
-      // 将相对路径转换为完整 URL
+      // Convert relative path to full URL
       return new URL(url, window.location.href).href;
     } catch {
-      // 如果转换失败，返回原始 URL
+      // If conversion fails, return original URL
       return url;
     }
   }
 
   /**
-   * 启动拦截
+   * Start interception
    */
   start(): void {
     this.interceptXHR();
@@ -45,7 +45,7 @@ export class Interceptor {
   }
 
   /**
-   * 停止拦截
+   * Stop interception
    */
   stop(): void {
     XMLHttpRequest.prototype.open = this.xhrOpen;
@@ -55,7 +55,7 @@ export class Interceptor {
   }
 
   /**
-   * 拦截 XMLHttpRequest
+   * Intercept XMLHttpRequest
    */
   private interceptXHR(): void {
     const self = this;
@@ -75,10 +75,10 @@ export class Interceptor {
       const requestId = xhr._mockRequestId as string;
       const requestTime = xhr._mockRequestTime as number;
 
-      // 标准化 URL
+      // Normalize URL
       const url = self.normalizeUrl(rawUrl);
 
-      // 记录请求
+      // Record request
       self.recorder.addRequest({
         id: requestId,
         method,
@@ -92,7 +92,7 @@ export class Interceptor {
       const rule = self.manager.findMatch(url);
       if (rule) {
         console.log(`[MockMonkey] XHR 拦截: ${method} ${url}`);
-        // 更新记录为被 mock
+        // Update record as mocked
         self.recorder.updateRequest(requestId, {
           mocked: true,
           ruleId: rule.id,
@@ -104,7 +104,7 @@ export class Interceptor {
         return;
       }
 
-      // 未被 mock 的请求，监听完成事件
+      // For non-mocked requests, listen for completion events
       const originalOnReadyStateChange = xhr.onreadystatechange;
       xhr.onreadystatechange = function (this: XMLHttpRequest, ...args) {
         if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -143,7 +143,7 @@ export class Interceptor {
   }
 
   /**
-   * 拦截 Fetch
+   * Intercept Fetch
    */
   private interceptFetch(): void {
     const self = this;
@@ -155,7 +155,7 @@ export class Interceptor {
       const requestTime = Date.now();
       const method = init?.method || 'GET';
 
-      // 记录请求
+      // Record request
       self.recorder.addRequest({
         id: requestId,
         method,
@@ -170,7 +170,7 @@ export class Interceptor {
 
       if (rule) {
         console.log(`[MockMonkey] Fetch 拦截: ${method} ${url}`);
-        // 更新记录为被 mock
+        // Update record as mocked
         self.recorder.updateRequest(requestId, {
           mocked: true,
           ruleId: rule.id,
@@ -181,11 +181,11 @@ export class Interceptor {
         return self.mockFetch(rule, requestId);
       }
 
-      // 未被 mock 的请求，记录响应
+      // For non-mocked requests, record response
       return self.originalFetch(input, init).then((response) => {
         const duration = Date.now() - requestTime;
 
-        // 克隆响应以避免消耗原始响应
+        // Clone response to avoid consuming original response
         const clonedResponse = response.clone();
         clonedResponse.json().catch(() => clonedResponse.text()).then((data: unknown) => {
           self.recorder.updateRequest(requestId, {
@@ -194,7 +194,7 @@ export class Interceptor {
             duration
           });
         }).catch(() => {
-          // 如果无法解析响应体，至少记录状态码
+          // If response body cannot be parsed, at least record status code
           self.recorder.updateRequest(requestId, {
             status: response.status,
             duration
@@ -207,7 +207,7 @@ export class Interceptor {
   }
 
   /**
-   * 模拟 XHR 响应
+   * Mock XHR response
    */
   private mockXHR(xhr: XMLHttpRequest, rule: MockRule, requestId: string): void {
     const delay = rule.options.delay || 0;
@@ -216,7 +216,7 @@ export class Interceptor {
     setTimeout(() => {
       const duration = Date.now() - requestTime;
 
-      // 使用 Mock.js 解析模板
+      // Use Mock.js to parse template
       let mockResponse = rule.response;
       if (typeof window !== 'undefined' && (window as any).Mock) {
         try {
@@ -257,7 +257,7 @@ export class Interceptor {
         configurable: true
       });
 
-      // 更新实际耗时
+      // Update actual duration
       this.recorder.updateRequest(requestId, { duration, response: mockResponse });
 
       const isSuccess = (rule.options.status || 200) >= 200 && (rule.options.status || 200) < 300;
@@ -273,7 +273,7 @@ export class Interceptor {
   }
 
   /**
-   * 模拟 Fetch 响应
+   * Mock Fetch response
    */
   private mockFetch(rule: MockRule, requestId: string): Promise<Response> {
     return new Promise((resolve) => {
@@ -284,7 +284,7 @@ export class Interceptor {
         const duration = Date.now() - requestTime;
         const headers = rule.options.headers || { 'Content-Type': 'application/json' };
 
-        // 使用 Mock.js 解析模板
+        // Use Mock.js to parse template
         let mockResponse = rule.response;
         if (typeof window !== 'undefined' && (window as any).Mock) {
           try {
@@ -302,7 +302,7 @@ export class Interceptor {
           console.warn('[MockMonkey] Mock.js 未加载，占位符将不会被替换');
         }
 
-        // 更新实际耗时
+        // Update actual duration
         this.recorder.updateRequest(requestId, { duration, response: mockResponse });
 
         resolve(

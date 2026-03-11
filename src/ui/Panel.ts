@@ -1,7 +1,7 @@
 import type { NetworkRequest } from '../types';
 
 /**
- * UI 面板管理器
+ * UI panel manager
  */
 export class Panel {
   private container: HTMLElement | null = null;
@@ -13,41 +13,41 @@ export class Panel {
   private hasMoved = false;
   private dragStartTime = 0;
   private dragOffset = { x: 0, y: 0 };
-  private buttonPosition = { x: 20, y: 20 }; // 默认位置 (right, bottom)
-  private currentRules: RuleItem[] = []; // 存储当前规则列表用于导出
+  private buttonPosition = { x: 20, y: 20 }; // Default position (right, bottom)
+  private currentRules: RuleItem[] = []; // Store current rules list for export
 
-  // 面板拖动相关
+  // Panel drag related
   private panelElement: HTMLElement | null = null;
   private isPanelDragging = false;
   private panelHasMoved = false;
   private panelDragStartTime = 0;
   private panelDragOffset = { x: 0, y: 0 };
   private panelPosition: { left: number; top: number } | null = null;
-  private editingRuleId: string | null = null; // 当前正在编辑的规则 ID
+  private editingRuleId: string | null = null; // Currently editing rule ID
 
   constructor(
     private onAddRule: (rule: RuleFormData) => void,
     private onUpdateRule?: (id: string, rule: RuleFormData) => void,
     private onCreateFromRequest?: (request: NetworkRequest) => void
   ) {
-    // 从 localStorage 加载保存的位置
+    // Load saved position from localStorage
     this.loadButtonPosition();
   }
 
   /**
-   * 初始化面板
+   * Initialize panel
    */
   init(): void {
     this.container = document.createElement('div');
     this.container.id = 'mock-monkey-container';
     this.shadowRoot = this.container.attachShadow({ mode: 'open' });
 
-    // 先添加内容和样式
+    // Add content and styles first
     this.attachStyles();
     this.createContent();
     this.bindEvents();
 
-    // 等待 body 存在后添加到页面
+    // Wait for body to exist before adding to page
     this.ensureBody().then(() => {
       if (document.body) {
         document.body.appendChild(this.container);
@@ -55,20 +55,20 @@ export class Panel {
       } else {
         console.error('[MockMonkey] document.body 仍然不存在');
       }
-      // 创建切换按钮
+      // Create toggle button
       this.createToggleButton();
     });
   }
 
   /**
-   * 创建容器
+   * Create container
    */
   private createContainer(): void {
-    // 已合并到 init() 方法中
+    // Merged into init() method
   }
 
   /**
-   * 附加样式
+   * Attach styles
    */
   private attachStyles(): void {
     if (!this.shadowRoot) return;
@@ -79,14 +79,14 @@ export class Panel {
   }
 
   /**
-   * 创建面板内容
+   * Create panel content
    */
   private createContent(): void {
     if (!this.shadowRoot) return;
 
     const panel = document.createElement('div');
     panel.className = 'mm-panel';
-    // 加载保存的面板位置
+    // Load saved panel position
     this.loadPanelPosition();
     if (this.panelPosition) {
       panel.style.left = `${this.panelPosition.left}px`;
@@ -165,7 +165,7 @@ export class Panel {
   }
 
   /**
-   * 创建切换按钮
+   * Create toggle button
    */
   private createToggleButton(): void {
     this.ensureBody().then(() => {
@@ -175,12 +175,12 @@ export class Panel {
       btn.title = 'MockMonkey';
       btn.style.cssText = `position: fixed; bottom: ${this.buttonPosition.y}px; right: ${this.buttonPosition.x}px; width: 50px; height: 50px; border-radius: 50%; background: #f5f5f5; border: none; cursor: move; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); z-index: 999998; display: flex; align-items: center; justify-content: center; padding: 9px; user-select: none;`;
 
-      // 保存按钮引用
+      // Save button reference
       this.toggleButton = btn;
 
-      // 绑定点击事件
+      // Bind click event
       btn.addEventListener('click', (e) => {
-        // 如果正在拖动或刚结束拖动，不触发点击
+        // If dragging or just finished dragging, don't trigger click
         if (this.isDragging) return;
         e.preventDefault();
         e.stopPropagation();
@@ -188,7 +188,7 @@ export class Panel {
         this.toggle();
       });
 
-      // 绑定拖动事件
+      // Bind drag events
       this.bindDragEvents(btn);
 
       document.body!.appendChild(btn);
@@ -197,7 +197,7 @@ export class Panel {
   }
 
   /**
-   * 确保 body 元素存在
+   * Ensure body element exists
    */
   private ensureBody(): Promise<void> {
     return new Promise((resolve) => {
@@ -217,11 +217,11 @@ export class Panel {
   }
 
   /**
-   * 绑定拖动事件
+   * Bind drag events
    */
   private bindDragEvents(btn: HTMLElement): void {
     btn.addEventListener('mousedown', (e) => {
-      // 只响应左键
+      // Only respond to left click
       if (e.button !== 0) return;
 
       this.dragStartTime = Date.now();
@@ -232,17 +232,17 @@ export class Panel {
       this.dragOffset.x = e.clientX - rect.left;
       this.dragOffset.y = e.clientY - rect.top;
 
-      // 添加全局事件监听
+      // Add global event listeners
       document.addEventListener('mousemove', this.handleMouseMove);
       document.addEventListener('mouseup', this.handleMouseUp);
 
-      // 移除过渡效果以提高拖动性能
+      // Remove transition for better drag performance
       btn.style.transition = 'none';
     });
   }
 
   /**
-   * 处理鼠标移动（拖动）
+   * Handle mouse move (dragging)
    */
   private handleMouseMove = (e: MouseEvent): void => {
     if (!this.toggleButton) return;
@@ -250,11 +250,11 @@ export class Panel {
     const btn = this.toggleButton;
     const rect = btn.getBoundingClientRect();
 
-    // 计算新位置
+    // Calculate new position
     let newX = e.clientX - this.dragOffset.x;
     let newY = e.clientY - this.dragOffset.y;
 
-    // 检测是否真正移动了
+    // Detect if actually moved
     const currentRight = window.innerWidth - rect.left - rect.width;
     const currentBottom = window.innerHeight - rect.top - rect.height;
     const newRight = window.innerWidth - newX - rect.width;
@@ -265,14 +265,14 @@ export class Panel {
       this.isDragging = true;
     }
 
-    // 边界限制
+    // Boundary limits
     const maxX = window.innerWidth - rect.width;
     const maxY = window.innerHeight - rect.height;
 
     newX = Math.max(0, Math.min(newX, maxX));
     newY = Math.max(0, Math.min(newY, maxY));
 
-    // 更新位置（使用 left/top 而不是 right/bottom 以便更直观的拖动）
+    // Update position (use left/top instead of right/bottom for more intuitive dragging)
     btn.style.left = `${newX}px`;
     btn.style.top = `${newY}px`;
     btn.style.right = 'auto';
@@ -280,31 +280,31 @@ export class Panel {
   };
 
   /**
-   * 处理鼠标松开
+   * Handle mouse up
    */
   private handleMouseUp = (): void => {
     if (!this.toggleButton) return;
 
     const btn = this.toggleButton;
 
-    // 恢复过渡效果
+    // Restore transition effect
     btn.style.transition = 'all 0.2s';
 
-    // 移除全局事件监听
+    // Remove global event listeners
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
 
-    // 延迟重置拖动状态，避免触发点击事件
+    // Delayed reset of drag state to avoid triggering click event
     setTimeout(() => {
       this.isDragging = false;
     }, 100);
 
-    // 保存位置到 localStorage
+    // Save position to localStorage
     this.saveButtonPosition();
   };
 
   /**
-   * 保存按钮位置到 localStorage
+   * Save button position to localStorage
    */
   private saveButtonPosition(): void {
     if (!this.toggleButton) return;
@@ -324,14 +324,14 @@ export class Panel {
   }
 
   /**
-   * 从 localStorage 加载按钮位置
+   * Load button position from localStorage
    */
   private loadButtonPosition(): void {
     try {
       const saved = localStorage.getItem('mock-monkey-button-position');
       if (saved) {
         const position = JSON.parse(saved) as { x: number; y: number };
-        // 验证位置有效性
+        // Validate position
         if (
           typeof position.x === 'number' &&
           typeof position.y === 'number' &&
@@ -348,7 +348,7 @@ export class Panel {
   }
 
   /**
-   * 绑定面板拖动事件
+   * Bind panel drag events
    */
   private bindPanelDragEvents(): void {
     if (!this.shadowRoot) return;
@@ -357,10 +357,10 @@ export class Panel {
     if (!dragHandle) return;
 
     dragHandle.addEventListener('mousedown', (e) => {
-      // 只响应左键
+      // Only respond to left click
       if (e.button !== 0) return;
 
-      // 如果点击的是关闭按钮，不触发拖动
+      // If clicking close button, don't trigger drag
       if ((e.target as HTMLElement).closest('[data-action="close"]')) return;
 
       this.panelDragStartTime = Date.now();
@@ -374,38 +374,38 @@ export class Panel {
       this.panelDragOffset.x = e.clientX - rect.left;
       this.panelDragOffset.y = e.clientY - rect.top;
 
-      // 添加全局事件监听
+      // Add global event listeners
       document.addEventListener('mousemove', this.handlePanelMouseMove);
       document.addEventListener('mouseup', this.handlePanelMouseUp);
 
-      // 移除过渡效果以提高拖动性能
+      // Remove transition for better drag performance
       panel.style.transition = 'none';
 
-      // 阻止文本选择
+      // Prevent text selection
       e.preventDefault();
     });
   }
 
   /**
-   * 处理面板鼠标移动（拖动）
+   * Handle panel mouse move (dragging)
    */
   private handlePanelMouseMove = (e: MouseEvent): void => {
     if (!this.panelElement) return;
 
     const panel = this.panelElement;
 
-    // 计算新位置
+    // Calculate new position
     let newX = e.clientX - this.panelDragOffset.x;
     let newY = e.clientY - this.panelDragOffset.y;
 
-    // 检测是否真正移动了
+    // Detect if actually moved
     const rect = panel.getBoundingClientRect();
     if (Math.abs(newX - rect.left) > 3 || Math.abs(newY - rect.top) > 3) {
       this.panelHasMoved = true;
       this.isPanelDragging = true;
     }
 
-    // 边界限制
+    // Boundary limits
     const maxX = window.innerWidth - rect.width;
     const maxY = window.innerHeight - rect.height;
 
@@ -417,36 +417,36 @@ export class Panel {
     panel.style.top = `${newY}px`;
     panel.style.transform = 'none';
 
-    // 更新保存的位置
+    // Update saved position
     this.panelPosition = { left: newX, top: newY };
   };
 
   /**
-   * 处理面板鼠标松开
+   * Handle panel mouse up
    */
   private handlePanelMouseUp = (): void => {
     if (!this.panelElement) return;
 
     const panel = this.panelElement;
 
-    // 恢复过渡效果
+    // Restore transition effect
     panel.style.transition = '';
 
-    // 移除全局事件监听
+    // Remove global event listeners
     document.removeEventListener('mousemove', this.handlePanelMouseMove);
     document.removeEventListener('mouseup', this.handlePanelMouseUp);
 
-    // 延迟重置拖动状态
+    // Delayed reset of drag state
     setTimeout(() => {
       this.isPanelDragging = false;
     }, 100);
 
-    // 保存位置到 localStorage
+    // Save position to localStorage
     this.savePanelPosition();
   };
 
   /**
-   * 保存面板位置到 localStorage
+   * Save panel position to localStorage
    */
   private savePanelPosition(): void {
     if (!this.panelPosition) return;
@@ -460,14 +460,14 @@ export class Panel {
   }
 
   /**
-   * 从 localStorage 加载面板位置
+   * Load panel position from localStorage
    */
   private loadPanelPosition(): void {
     try {
       const saved = localStorage.getItem('mock-monkey-panel-position');
       if (saved) {
         const position = JSON.parse(saved) as { left: number; top: number };
-        // 验证位置有效性
+        // Validate position
         if (
           typeof position.left === 'number' &&
           typeof position.top === 'number' &&
@@ -484,11 +484,11 @@ export class Panel {
   }
 
   /**
-   * 导出规则
+   * Export rules
    */
   private exportRules(): void {
     try {
-      // 将规则序列化为可导入的格式
+      // Serialize rules to importable format
       const exportData = this.currentRules.map((rule) => ({
         pattern: rule.patternStr,
         response: rule.response,
@@ -516,19 +516,19 @@ export class Panel {
   }
 
   /**
-   * 导入规则
+   * Import rules
    */
   private importRules(): void {
     const fileInput = this.shadowRoot?.querySelector('[data-action="import-file"]') as HTMLInputElement;
     if (fileInput) {
-      // 重置 value，确保选择相同文件时也能触发 change 事件
+      // Reset value to ensure selecting same file triggers change event
       fileInput.value = '';
       fileInput.click();
     }
   }
 
   /**
-   * 处理导入文件
+   * Handle import file
    */
   private handleImportFile(e: Event): void {
     const input = e.currentTarget as HTMLInputElement;
@@ -551,10 +551,10 @@ export class Panel {
           throw new Error('导入文件格式错误：必须是数组');
         }
 
-        // 触发导入回调，让外部处理规则导入
+        // Trigger import callback, let external handler process rule import
         let successCount = 0;
         importedRules.forEach((ruleData) => {
-          // 解析 pattern
+          // Parse pattern
           let parsedPattern: string | RegExp = ruleData.pattern;
           if (ruleData.pattern.startsWith('/')) {
             try {
@@ -581,7 +581,7 @@ export class Panel {
 
         console.log(`[MockMonkey] 成功导入 ${successCount} 条规则`);
 
-        // 重置 input
+        // Reset input
         input.value = '';
       } catch (e) {
         console.error('[MockMonkey] 导入规则失败:', e);
@@ -592,15 +592,15 @@ export class Panel {
   }
 
   /**
-   * 绑定事件
+   * Bind events
    */
   private bindEvents(): void {
     if (!this.shadowRoot) return;
 
-    // 关闭按钮
+    // Close button
     this.shadowRoot.querySelector('[data-action="close"]')?.addEventListener('click', () => this.hide());
 
-    // Tab 切换
+    // Tab switching
     this.shadowRoot.querySelectorAll('.mm-tab').forEach((tab) => {
       tab.addEventListener('click', (e) => {
         const target = e.currentTarget as HTMLElement;
@@ -609,21 +609,21 @@ export class Panel {
       });
     });
 
-    // 清空网络请求
+    // Clear network requests
     this.shadowRoot.querySelector('[data-action="clear-requests"]')?.addEventListener('click', () => {
       this.updateNetworkRequests([]);
     });
 
-    // 导出规则
+    // Export rules
     this.shadowRoot.querySelector('[data-action="export"]')?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.exportRules();
-      // 移除焦点，防止键盘事件重复触发
+      // Remove focus to prevent duplicate keyboard events
       (e.currentTarget as HTMLElement).blur();
     });
 
-    // 导入规则
+    // Import rules
     this.shadowRoot.querySelector('[data-action="import"]')?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -631,23 +631,23 @@ export class Panel {
       (e.currentTarget as HTMLElement).blur();
     });
 
-    // 导入文件选择
+    // Import file selection
     this.shadowRoot.querySelector('[data-action="import-file"]')?.addEventListener('change', (e) => {
       this.handleImportFile(e);
     });
 
-    // 添加规则表单
+    // Add rule form
     this.shadowRoot.querySelector('[data-action="add-rule"]')?.addEventListener('submit', (e) => {
       e.preventDefault();
       this.handleAddRule(e);
     });
 
-    // 取消编辑按钮
+    // Cancel edit button
     this.shadowRoot.querySelector('[data-action="cancel-edit"]')?.addEventListener('click', () => {
       this.cancelEdit();
     });
 
-    // 阻止面板内的滚轮事件传播到主页面
+    // Prevent wheel event propagation from panel to main page
     const panel = this.shadowRoot.querySelector('.mm-panel');
     if (panel) {
       panel.addEventListener('wheel', (e: WheelEvent) => {
@@ -655,23 +655,23 @@ export class Panel {
       }, { capture: true, passive: true });
     }
 
-    // 绑定面板拖动事件
+    // Bind panel drag events
     this.bindPanelDragEvents();
   }
 
   /**
-   * 切换 Tab
+   * Switch tab
    */
   private switchTab(tabName: string): void {
     if (!this.shadowRoot) return;
 
-    // 更新 tab 样式
+    // Update tab styles
     this.shadowRoot.querySelectorAll('.mm-tab').forEach((tab) => {
       const isActive = (tab as HTMLElement).dataset.tab === tabName;
       tab.classList.toggle('mm-tab--active', isActive);
     });
 
-    // 更新内容显示
+    // Update content display
     this.shadowRoot.querySelectorAll('.mm-tab-content').forEach((content) => {
       const isActive = (content as HTMLElement).dataset.content === tabName;
       content.classList.toggle('mm-tab-content--active', isActive);
@@ -679,7 +679,7 @@ export class Panel {
   }
 
   /**
-   * 处理添加规则
+   * Handle add rule
    */
   private handleAddRule(e: Event): void {
     const form = e.currentTarget as HTMLFormElement;
@@ -691,7 +691,7 @@ export class Panel {
     const status = parseInt(formData.get('status') as string) || 200;
     const editingId = formData.get('editing-id') as string;
 
-    // 解析 pattern
+    // Parse pattern
     let parsedPattern: string | RegExp = pattern;
     if (pattern.startsWith('/')) {
       try {
@@ -705,7 +705,7 @@ export class Panel {
       }
     }
 
-    // 解析响应
+    // Parse response
     let response: unknown;
     try {
       response = JSON.parse(responseStr);
@@ -721,10 +721,10 @@ export class Panel {
     };
 
     if (editingId) {
-      // 编辑模式
+      // Edit mode
       this.onUpdateRule?.(editingId, ruleData);
     } else {
-      // 新增模式
+      // Add mode
       this.onAddRule(ruleData);
     }
 
@@ -734,7 +734,7 @@ export class Panel {
   }
 
   /**
-   * 取消编辑模式
+   * Cancel edit mode
    */
   private cancelEdit(): void {
     this.editingRuleId = null;
@@ -754,7 +754,7 @@ export class Panel {
   }
 
   /**
-   * 进入编辑模式
+   * Enter edit mode
    */
   private enterEditMode(rule: RuleItem): void {
     this.editingRuleId = rule.id;
@@ -766,7 +766,7 @@ export class Panel {
     const tabLabel = this.shadowRoot.querySelector('[data-tab-label]') as HTMLElement;
     const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
 
-    // 填充表单
+    // Fill form
     const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
     const responseInput = this.shadowRoot.querySelector('[name="response"]') as HTMLTextAreaElement;
     const delayInput = this.shadowRoot.querySelector('[name="delay"]') as HTMLInputElement;
@@ -778,20 +778,20 @@ export class Panel {
     if (statusInput) statusInput.value = rule.status.toString();
     if (editingIdInput) editingIdInput.value = rule.id;
 
-    // 更新 UI 状态
+    // Update UI state
     if (submitBtn) submitBtn.textContent = '保存规则';
     if (cancelBtn) cancelBtn.style.display = '';
     if (tabLabel) tabLabel.textContent = '编辑';
 
-    // 切换到表单标签页
+    // Switch to form tab
     this.switchTab('add');
   }
 
   /**
-   * 更新规则列表
+   * Update rules list
    */
   updateRules(rules: RuleItem[]): void {
-    // 保存当前规则用于导出
+    // Save current rules for export
     this.currentRules = rules;
 
     if (!this.shadowRoot) return;
@@ -811,7 +811,7 @@ export class Panel {
           <p class="mm-hint">点击<span class="mm-link" data-action="go-to-add">"添加规则"</span>开始配置</p>
         </div>
       `;
-      // 绑定跳转事件
+      // Bind navigation event
       listContainer.querySelector('[data-action="go-to-add"]')?.addEventListener('click', () => {
         this.switchTab('add');
       });
@@ -845,7 +845,7 @@ export class Panel {
       )
       .join('');
 
-    // 绑定规则项事件
+    // Bind rule item events
     listContainer.querySelectorAll('[data-action="toggle"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
@@ -872,11 +872,11 @@ export class Panel {
   }
 
   /**
-   * 更新网络请求列表
+   * Update network request list
    */
   updateNetworkRequests(requests: NetworkRequest[]): void {
     this.networkRequests = requests;
-    // 存储请求用于快速创建 mock
+    // Store requests for quick mock creation
     (this as any).requestsById = new Map(requests.map(r => [r.id, r]));
     if (!this.shadowRoot) return;
 
@@ -927,7 +927,7 @@ export class Panel {
       )
       .join('');
 
-    // 绑定创建 mock 按钮事件
+    // Bind create mock button events
     listContainer.querySelectorAll('[data-action="create-mock"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.requestId;
@@ -945,7 +945,7 @@ export class Panel {
       this.isVisible = true;
       this.container.classList.add('mm-panel--visible');
       console.log('[MockMonkey] 已添加 mm-panel--visible 类');
-      // 使用 shadowRoot 查询面板元素
+      // Use shadowRoot to query panel element
       const panel = this.shadowRoot?.querySelector('.mm-panel') as HTMLElement;
       if (panel) {
         panel.style.display = 'flex';
@@ -987,19 +987,19 @@ export class Panel {
   }
 
   /**
-   * 从网络请求创建 Mock 规则
+   * Create Mock rule from network request
    */
   private handleCreateFromRequest(requestId: string): void {
     const requestsById = (this as any).requestsById as Map<string, NetworkRequest>;
     const request = requestsById?.get(requestId);
     if (!request) return;
 
-    // 触发回调或直接填充表单
+    // Trigger callback or fill form directly
     if (this.onCreateFromRequest) {
       this.onCreateFromRequest(request);
     }
 
-    // 填充表单
+    // Fill form
     if (!this.shadowRoot) return;
     const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
     const responseInput = this.shadowRoot.querySelector('[name="response"]') as HTMLTextAreaElement;
@@ -1015,12 +1015,12 @@ export class Panel {
       statusInput.value = request.status.toString();
     }
 
-    // 切换到添加规则 tab
+    // Switch to add rule tab
     this.switchTab('add');
   }
 
   /**
-   * HTML 转义
+   * HTML escape
    */
   private escapeHtml(text: string): string {
     const div = document.createElement('div');
@@ -1029,14 +1029,14 @@ export class Panel {
   }
 
   /**
-   * HTML 属性转义（转义双引号）
+   * HTML attribute escape (escape double quotes)
    */
   private escapeHtmlAttr(text: string): string {
     return this.escapeHtml(text).replace(/"/g, '&quot;');
   }
 
   /**
-   * 截断 URL，显示域名 + 路径 + 部分查询参数
+   * Truncate URL, display domain + path + partial query params
    */
   private truncateUrl(url: string, maxLength = 100): string {
     try {
@@ -1044,7 +1044,7 @@ export class Panel {
       const baseUrl = `${urlObj.origin}${urlObj.pathname}`;
 
       if (urlObj.search) {
-        // 保留前几个查询参数
+        // Keep first few query params
         const searchParams = new URLSearchParams(urlObj.search);
         const params: string[] = [];
         let currentLength = baseUrl.length + 1; // +1 for '?'
@@ -1052,7 +1052,7 @@ export class Panel {
         for (const [key, value] of searchParams.entries()) {
           const paramStr = `${key}=${value}`;
           if (currentLength + paramStr.length + 1 > maxLength) {
-            // 加上这个参数会超过最大长度，停止添加
+            // Adding this param would exceed max length, stop adding
             break;
           }
           params.push(paramStr);
@@ -1060,7 +1060,7 @@ export class Panel {
         }
 
         const queryString = params.length > 0 ? '?' + params.join('&') : '?';
-        // 如果还有更多参数，添加 ...
+        // If there are more params, add ...
         if (params.length < Array.from(searchParams.entries()).length) {
           return baseUrl + queryString + '...';
         }
@@ -1069,7 +1069,7 @@ export class Panel {
 
       return baseUrl;
     } catch {
-      // URL 解析失败，按长度截断
+      // URL parsing failed, truncate by length
       if (url.length > maxLength) {
         return url.substring(0, maxLength - 3) + '...';
       }
@@ -1078,7 +1078,7 @@ export class Panel {
   }
 
   /**
-   * 获取样式
+   * Get styles
    */
   private getStyles(): string {
     return `
@@ -1618,7 +1618,7 @@ export class Panel {
 }
 
 /**
- * 规则表单数据
+ * Rule form data
  */
 export interface RuleFormData {
   pattern: string | RegExp;
@@ -1630,7 +1630,7 @@ export interface RuleFormData {
 }
 
 /**
- * 规则列表项
+ * Rule list item
  */
 export interface RuleItem {
   id: string;
@@ -1642,7 +1642,7 @@ export interface RuleItem {
 }
 
 /**
- * 规则操作回调
+ * Rule operation callbacks
  */
 export interface RuleCallbacks {
   onToggle: (id: string) => void;
@@ -1650,7 +1650,7 @@ export interface RuleCallbacks {
   onDelete: (id: string) => void;
 }
 
-// 扩展 Panel 类以支持回调
+// Extend Panel class to support callbacks
 export class PanelWithCallbacks extends Panel {
   constructor(
     onAddRule: (rule: RuleFormData) => void,

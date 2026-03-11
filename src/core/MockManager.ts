@@ -1,7 +1,7 @@
 import type { MockRule, CreateMockRuleParams, MockRuleOptions } from '../types';
 
 /**
- * Mock 管理器 - 管理 Mock 规则的增删改查
+ * Mock Manager - Manages CRUD operations for Mock rules
  */
 export class MockManager {
   private rules: Map<string, MockRule> = new Map();
@@ -12,7 +12,7 @@ export class MockManager {
   }
 
   /**
-   * 添加 Mock 规则
+   * Add Mock rule
    */
   add(params: CreateMockRuleParams): MockRule {
     const id = this.generateId();
@@ -27,13 +27,13 @@ export class MockManager {
 
     this.rules.set(id, rule);
     this.saveToStorage();
-    console.log(`[MockMonkey] 规则已添加: ${this.patternToString(params.pattern)}`);
+    console.log(`[MockMonkey] Rule added: ${this.patternToString(params.pattern)}`);
 
     return rule;
   }
 
   /**
-   * 更新 Mock 规则
+   * Update Mock rule
    */
   update(id: string, updates: Partial<Omit<MockRule, 'id' | 'createdAt'>>): boolean {
     const rule = this.rules.get(id);
@@ -47,7 +47,7 @@ export class MockManager {
   }
 
   /**
-   * 移除 Mock 规则
+   * Remove Mock rule
    */
   remove(id: string): boolean {
     const result = this.rules.delete(id);
@@ -58,7 +58,7 @@ export class MockManager {
   }
 
   /**
-   * 根据 pattern 移除规则
+   * Remove rule by pattern
    */
   removeByPattern(pattern: string | RegExp): boolean {
     const patternStr = this.patternToString(pattern);
@@ -71,7 +71,7 @@ export class MockManager {
   }
 
   /**
-   * 清空所有规则
+   * Clear all rules
    */
   clear(): void {
     this.rules.clear();
@@ -79,21 +79,21 @@ export class MockManager {
   }
 
   /**
-   * 获取所有规则
+   * Get all rules
    */
   getAll(): MockRule[] {
     return Array.from(this.rules.values());
   }
 
   /**
-   * 获取单个规则
+   * Get single rule
    */
   get(id: string): MockRule | undefined {
     return this.rules.get(id);
   }
 
   /**
-   * 查找匹配的 Mock 规则
+   * Find matching Mock rule
    */
   findMatch(url: string): MockRule | null {
     for (const rule of this.rules.values()) {
@@ -109,7 +109,7 @@ export class MockManager {
   }
 
   /**
-   * 启用/禁用规则
+   * Enable/disable rule
    */
   toggle(id: string): boolean {
     const rule = this.rules.get(id);
@@ -121,33 +121,33 @@ export class MockManager {
   }
 
   /**
-   * 生成唯一 ID
+   * Generate unique ID
    */
   private generateId(): string {
     return `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
-   * 将 pattern 转为字符串
+   * Convert pattern to string
    */
   private patternToString(pattern: string | RegExp): string {
     return pattern instanceof RegExp ? pattern.toString() : pattern;
   }
 
   /**
-   * 保存到 localStorage
+   * Save to localStorage
    */
   private saveToStorage(): void {
     try {
       const data = Array.from(this.rules.entries());
       localStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch (e) {
-      console.warn('[MockMonkey] 保存规则失败:', e);
+      console.warn('[MockMonkey] Failed to save rules:', e);
     }
   }
 
   /**
-   * 从 localStorage 加载
+   * Load from localStorage
    */
   private loadFromStorage(): void {
     try {
@@ -156,7 +156,7 @@ export class MockManager {
 
       const data = JSON.parse(stored) as Array<[string, MockRule]>;
       for (const [id, rule] of data) {
-        // 恢复 RegExp 对象
+        // Restore RegExp object
         if (typeof rule.pattern === 'string' && rule.pattern.startsWith('/')) {
           try {
             const match = rule.pattern.match(/^\/(.+)\/([gimuy]*)$/);
@@ -164,14 +164,14 @@ export class MockManager {
               rule.pattern = new RegExp(match[1], match[2]);
             }
           } catch (e) {
-            // 保持字符串
+            // Keep as string
           }
         }
         this.rules.set(id, rule);
       }
-      console.log(`[MockMonkey] 已加载 ${this.rules.size} 条规则`);
+      console.log(`[MockMonkey] Loaded ${this.rules.size} rules`);
     } catch (e) {
-      console.warn('[MockMonkey] 加载规则失败:', e);
+      console.warn('[MockMonkey] Failed to load rules:', e);
     }
   }
 }

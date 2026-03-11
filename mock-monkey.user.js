@@ -37,7 +37,7 @@
       this.loadFromStorage();
     }
     /**
-     * 添加 Mock 规则
+     * Add Mock rule
      */
     add(params) {
       const id = this.generateId();
@@ -51,11 +51,11 @@
       };
       this.rules.set(id, rule);
       this.saveToStorage();
-      console.log(`[MockMonkey] 规则已添加: ${this.patternToString(params.pattern)}`);
+      console.log(`[MockMonkey] Rule added: ${this.patternToString(params.pattern)}`);
       return rule;
     }
     /**
-     * 更新 Mock 规则
+     * Update Mock rule
      */
     update(id, updates) {
       const rule = this.rules.get(id);
@@ -66,7 +66,7 @@
       return true;
     }
     /**
-     * 移除 Mock 规则
+     * Remove Mock rule
      */
     remove(id) {
       const result = this.rules.delete(id);
@@ -76,7 +76,7 @@
       return result;
     }
     /**
-     * 根据 pattern 移除规则
+     * Remove rule by pattern
      */
     removeByPattern(pattern) {
       const patternStr = this.patternToString(pattern);
@@ -88,26 +88,26 @@
       return false;
     }
     /**
-     * 清空所有规则
+     * Clear all rules
      */
     clear() {
       this.rules.clear();
       this.saveToStorage();
     }
     /**
-     * 获取所有规则
+     * Get all rules
      */
     getAll() {
       return Array.from(this.rules.values());
     }
     /**
-     * 获取单个规则
+     * Get single rule
      */
     get(id) {
       return this.rules.get(id);
     }
     /**
-     * 查找匹配的 Mock 规则
+     * Find matching Mock rule
      */
     findMatch(url) {
       for (const rule of this.rules.values()) {
@@ -121,7 +121,7 @@
       return null;
     }
     /**
-     * 启用/禁用规则
+     * Enable/disable rule
      */
     toggle(id) {
       const rule = this.rules.get(id);
@@ -131,30 +131,30 @@
       return rule.enabled;
     }
     /**
-     * 生成唯一 ID
+     * Generate unique ID
      */
     generateId() {
       return `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
     /**
-     * 将 pattern 转为字符串
+     * Convert pattern to string
      */
     patternToString(pattern) {
       return pattern instanceof RegExp ? pattern.toString() : pattern;
     }
     /**
-     * 保存到 localStorage
+     * Save to localStorage
      */
     saveToStorage() {
       try {
         const data = Array.from(this.rules.entries());
         localStorage.setItem(this.storageKey, JSON.stringify(data));
       } catch (e) {
-        console.warn("[MockMonkey] 保存规则失败:", e);
+        console.warn("[MockMonkey] Failed to save rules:", e);
       }
     }
     /**
-     * 从 localStorage 加载
+     * Load from localStorage
      */
     loadFromStorage() {
       try {
@@ -173,9 +173,9 @@
           }
           this.rules.set(id, rule);
         }
-        console.log(`[MockMonkey] 已加载 ${this.rules.size} 条规则`);
+        console.log(`[MockMonkey] Loaded ${this.rules.size} rules`);
       } catch (e) {
-        console.warn("[MockMonkey] 加载规则失败:", e);
+        console.warn("[MockMonkey] Failed to load rules:", e);
       }
     }
   }
@@ -186,7 +186,7 @@
       this.listeners =  new Set();
     }
     /**
-     * 添加请求记录
+     * Add request record
      */
     addRequest(request) {
       this.requests.unshift(request);
@@ -196,7 +196,7 @@
       this.notifyListeners();
     }
     /**
-     * 更新请求记录（用于更新响应等信息）
+     * Update request record (for updating response info, etc.)
      */
     updateRequest(id, updates) {
       const index = this.requests.findIndex((r) => r.id === id);
@@ -206,20 +206,20 @@
       }
     }
     /**
-     * 获取所有请求记录
+     * Get all request records
      */
     getRequests() {
       return [...this.requests];
     }
     /**
-     * 清空所有记录
+     * Clear all records
      */
     clear() {
       this.requests = [];
       this.notifyListeners();
     }
     /**
-     * 订阅请求变化
+     * Subscribe to request changes
      */
     subscribe(listener) {
       this.listeners.add(listener);
@@ -228,13 +228,13 @@
       };
     }
     /**
-     * 通知所有监听器
+     * Notify all listeners
      */
     notifyListeners() {
       this.listeners.forEach((listener) => listener([...this.requests]));
     }
     /**
-     * 生成唯一 ID
+     * Generate unique ID
      */
     static generateId() {
       return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -249,7 +249,7 @@
       this.originalFetch = window.fetch.bind(window);
     }
     /**
-     * 将相对 URL 转换为完整的 URL
+     * Convert relative URL to full URL
      */
     normalizeUrl(url) {
       try {
@@ -262,7 +262,7 @@
       }
     }
     /**
-     * 启动拦截
+     * Start interception
      */
     start() {
       this.interceptXHR();
@@ -270,7 +270,7 @@
       console.log("[MockMonkey] 拦截器已启动");
     }
     /**
-     * 停止拦截
+     * Stop interception
      */
     stop() {
       XMLHttpRequest.prototype.open = this.xhrOpen;
@@ -279,7 +279,7 @@
       console.log("[MockMonkey] 拦截器已停止");
     }
     /**
-     * 拦截 XMLHttpRequest
+     * Intercept XMLHttpRequest
      */
     interceptXHR() {
       const self = this;
@@ -354,7 +354,7 @@
       };
     }
     /**
-     * 拦截 Fetch
+     * Intercept Fetch
      */
     interceptFetch() {
       const self = this;
@@ -405,7 +405,7 @@
       };
     }
     /**
-     * 模拟 XHR 响应
+     * Mock XHR response
      */
     mockXHR(xhr, rule, requestId) {
       const delay = rule.options.delay || 0;
@@ -460,7 +460,7 @@
       }, delay);
     }
     /**
-     * 模拟 Fetch 响应
+     * Mock Fetch response
      */
     mockFetch(rule, requestId) {
       return new Promise((resolve) => {
@@ -497,7 +497,7 @@
     }
   }
   class Panel {
-    // 当前正在编辑的规则 ID
+    // Currently editing rule ID
     constructor(onAddRule, onUpdateRule, onCreateFromRequest) {
       this.onAddRule = onAddRule;
       this.onUpdateRule = onUpdateRule;
@@ -587,7 +587,7 @@
       this.loadButtonPosition();
     }
     /**
-     * 初始化面板
+     * Initialize panel
      */
     init() {
       this.container = document.createElement("div");
@@ -607,12 +607,12 @@
       });
     }
     /**
-     * 创建容器
+     * Create container
      */
     createContainer() {
     }
     /**
-     * 附加样式
+     * Attach styles
      */
     attachStyles() {
       if (!this.shadowRoot) return;
@@ -621,7 +621,7 @@
       this.shadowRoot.appendChild(style);
     }
     /**
-     * 创建面板内容
+     * Create panel content
      */
     createContent() {
       if (!this.shadowRoot) return;
@@ -702,7 +702,7 @@
       this.shadowRoot.appendChild(panel);
     }
     /**
-     * 创建切换按钮
+     * Create toggle button
      */
     createToggleButton() {
       this.ensureBody().then(() => {
@@ -725,7 +725,7 @@
       });
     }
     /**
-     * 确保 body 元素存在
+     * Ensure body element exists
      */
     ensureBody() {
       return new Promise((resolve) => {
@@ -744,7 +744,7 @@
       });
     }
     /**
-     * 绑定拖动事件
+     * Bind drag events
      */
     bindDragEvents(btn) {
       btn.addEventListener("mousedown", (e) => {
@@ -761,7 +761,7 @@
       });
     }
     /**
-     * 保存按钮位置到 localStorage
+     * Save button position to localStorage
      */
     saveButtonPosition() {
       if (!this.toggleButton) return;
@@ -777,7 +777,7 @@
       }
     }
     /**
-     * 从 localStorage 加载按钮位置
+     * Load button position from localStorage
      */
     loadButtonPosition() {
       try {
@@ -794,7 +794,7 @@
       }
     }
     /**
-     * 绑定面板拖动事件
+     * Bind panel drag events
      */
     bindPanelDragEvents() {
       if (!this.shadowRoot) return;
@@ -818,7 +818,7 @@
       });
     }
     /**
-     * 保存面板位置到 localStorage
+     * Save panel position to localStorage
      */
     savePanelPosition() {
       if (!this.panelPosition) return;
@@ -830,7 +830,7 @@
       }
     }
     /**
-     * 从 localStorage 加载面板位置
+     * Load panel position from localStorage
      */
     loadPanelPosition() {
       try {
@@ -847,7 +847,7 @@
       }
     }
     /**
-     * 导出规则
+     * Export rules
      */
     exportRules() {
       try {
@@ -875,7 +875,7 @@
       }
     }
     /**
-     * 导入规则
+     * Import rules
      */
     importRules() {
       const fileInput = this.shadowRoot?.querySelector('[data-action="import-file"]');
@@ -885,7 +885,7 @@
       }
     }
     /**
-     * 处理导入文件
+     * Handle import file
      */
     handleImportFile(e) {
       const input = e.currentTarget;
@@ -933,7 +933,7 @@
       reader.readAsText(file);
     }
     /**
-     * 绑定事件
+     * Bind events
      */
     bindEvents() {
       if (!this.shadowRoot) return;
@@ -979,7 +979,7 @@
       this.bindPanelDragEvents();
     }
     /**
-     * 切换 Tab
+     * Switch tab
      */
     switchTab(tabName) {
       if (!this.shadowRoot) return;
@@ -993,7 +993,7 @@
       });
     }
     /**
-     * 处理添加规则
+     * Handle add rule
      */
     handleAddRule(e) {
       const form = e.currentTarget;
@@ -1037,7 +1037,7 @@
       this.switchTab("rules");
     }
     /**
-     * 取消编辑模式
+     * Cancel edit mode
      */
     cancelEdit() {
       this.editingRuleId = null;
@@ -1054,7 +1054,7 @@
       if (editingIdInput) editingIdInput.value = "";
     }
     /**
-     * 进入编辑模式
+     * Enter edit mode
      */
     enterEditMode(rule) {
       this.editingRuleId = rule.id;
@@ -1079,7 +1079,7 @@
       this.switchTab("add");
     }
     /**
-     * 更新规则列表
+     * Update rules list
      */
     updateRules(rules) {
       this.currentRules = rules;
@@ -1149,7 +1149,7 @@
       });
     }
     /**
-     * 更新网络请求列表
+     * Update network request list
      */
     updateNetworkRequests(requests) {
       this.networkRequests = requests;
@@ -1250,7 +1250,7 @@
       }
     }
     /**
-     * 从网络请求创建 Mock 规则
+     * Create Mock rule from network request
      */
     handleCreateFromRequest(requestId) {
       const requestsById = this.requestsById;
@@ -1275,7 +1275,7 @@
       this.switchTab("add");
     }
     /**
-     * HTML 转义
+     * HTML escape
      */
     escapeHtml(text) {
       const div = document.createElement("div");
@@ -1283,13 +1283,13 @@
       return div.innerHTML;
     }
     /**
-     * HTML 属性转义（转义双引号）
+     * HTML attribute escape (escape double quotes)
      */
     escapeHtmlAttr(text) {
       return this.escapeHtml(text).replace(/"/g, "&quot;");
     }
     /**
-     * 截断 URL，显示域名 + 路径 + 部分查询参数
+     * Truncate URL, display domain + path + partial query params
      */
     truncateUrl(url, maxLength = 100) {
       try {
@@ -1322,7 +1322,7 @@
       }
     }
     /**
-     * 获取样式
+     * Get styles
      */
     getStyles() {
       return `
@@ -1893,7 +1893,7 @@
       });
     }
     /**
-     * 获取单例实例
+     * Get singleton instance
      */
     static getInstance() {
       if (!MockMonkey.instance) {
@@ -1902,7 +1902,7 @@
       return MockMonkey.instance;
     }
     /**
-     * 启动 MockMonkey
+     * Start MockMonkey
      */
     start() {
       if (document.readyState === "loading") {
@@ -1912,32 +1912,32 @@
       }
     }
     /**
-     * 初始化
+     * Initialize
      */
     init() {
       this.interceptor.start();
       this.panel.init();
       this.updateRulesList();
-      console.log("[MockMonkey] 已启动! 点击右下角 🐵 按钮打开管理面板");
+      console.log("[MockMonkey] Started! Click the 🐵 button in the bottom right to open the management panel");
     }
     /**
-     * 添加规则
+     * Add rule
      */
     handleAddRule(rule) {
       this.manager.add(rule);
       this.updateRulesList();
-      console.log("[MockMonkey] 规则已添加");
+      console.log("[MockMonkey] Rule added");
     }
     /**
-     * 切换规则状态
+     * Toggle rule status
      */
     handleToggleRule(id) {
       const enabled = this.manager.toggle(id);
       this.updateRulesList();
-      console.log(`[MockMonkey] 规则已${enabled ? "启用" : "禁用"}`);
+      console.log(`[MockMonkey] Rule ${enabled ? "enabled" : "disabled"}`);
     }
     /**
-     * 编辑规则
+     * Edit rule
      */
     handleEditRule(id, rule) {
       const success = this.manager.update(id, {
@@ -1947,23 +1947,23 @@
       });
       if (success) {
         this.updateRulesList();
-        console.log("[MockMonkey] 规则已更新");
+        console.log("[MockMonkey] Rule updated");
       } else {
-        console.error("[MockMonkey] 规则更新失败：找不到规则");
+        console.error("[MockMonkey] Rule update failed: rule not found");
       }
     }
     /**
-     * 删除规则
+     * Delete rule
      */
     handleDeleteRule(id) {
-      if (confirm("确定要删除这条规则吗？")) {
+      if (confirm("Are you sure you want to delete this rule?")) {
         this.manager.remove(id);
         this.updateRulesList();
-        console.log("[MockMonkey] 规则已删除");
+        console.log("[MockMonkey] Rule deleted");
       }
     }
     /**
-     * 更新规则列表
+     * Update rules list
      */
     updateRulesList() {
       const rules = this.manager.getAll().map((rule) => ({
@@ -1993,14 +1993,14 @@
     },
     list: () => {
       const manager = MockMonkey.getInstance()["manager"];
-      console.log("[MockMonkey] 当前规则:");
+      console.log("[MockMonkey] Current rules:");
       manager.getAll().forEach((rule) => {
         console.log(`  ${rule.enabled ? "✓" : "✗"} ${rule.pattern}`, rule);
       });
     },
     listRequests: () => {
       const recorder = MockMonkey.getInstance()["recorder"];
-      console.log("[MockMonkey] 网络请求记录:");
+      console.log("[MockMonkey] Network request records:");
       recorder.getRequests().forEach((req) => {
         console.log(`  ${req.mocked ? "🟢 MOCK" : "⚪ REAL"} ${req.method} ${req.url}`, req);
       });
@@ -2008,7 +2008,7 @@
     clearRequests: () => {
       const recorder = MockMonkey.getInstance()["recorder"];
       recorder.clear();
-      console.log("[MockMonkey] 网络请求记录已清空");
+      console.log("[MockMonkey] Network request records cleared");
     },
     manager: MockMonkey.getInstance()["manager"],
     recorder: MockMonkey.getInstance()["recorder"]

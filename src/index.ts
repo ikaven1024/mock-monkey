@@ -4,7 +4,7 @@ import { RequestRecorder } from './core/RequestRecorder';
 import { PanelWithCallbacks, type RuleItem, type RuleFormData } from './ui/Panel';
 
 /**
- * MockMonkey 主类
+ * MockMonkey main class
  */
 class MockMonkey {
   private static instance: MockMonkey;
@@ -27,14 +27,14 @@ class MockMonkey {
       }
     );
 
-    // 订阅请求变化，更新面板
+    // Subscribe to request changes, update panel
     this.recorder.subscribe((requests) => {
       this.panel.updateNetworkRequests(requests);
     });
   }
 
   /**
-   * 获取单例实例
+   * Get singleton instance
    */
   static getInstance(): MockMonkey {
     if (!MockMonkey.instance) {
@@ -44,10 +44,10 @@ class MockMonkey {
   }
 
   /**
-   * 启动 MockMonkey
+   * Start MockMonkey
    */
   start(): void {
-    // 等待 DOM 加载完成
+    // Wait for DOM to load
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.init());
     } else {
@@ -56,41 +56,41 @@ class MockMonkey {
   }
 
   /**
-   * 初始化
+   * Initialize
    */
   private init(): void {
-    // 启动拦截器
+    // Start interceptor
     this.interceptor.start();
 
-    // 初始化面板
+    // Initialize panel
     this.panel.init();
 
-    // 初始更新规则列表
+    // Initial update of rules list
     this.updateRulesList();
 
-    console.log('[MockMonkey] 已启动! 点击右下角 🐵 按钮打开管理面板');
+    console.log('[MockMonkey] Started! Click the 🐵 button in the bottom right to open the management panel');
   }
 
   /**
-   * 添加规则
+   * Add rule
    */
   private handleAddRule(rule: RuleFormData): void {
     this.manager.add(rule);
     this.updateRulesList();
-    console.log('[MockMonkey] 规则已添加');
+    console.log('[MockMonkey] Rule added');
   }
 
   /**
-   * 切换规则状态
+   * Toggle rule status
    */
   private handleToggleRule(id: string): void {
     const enabled = this.manager.toggle(id);
     this.updateRulesList();
-    console.log(`[MockMonkey] 规则已${enabled ? '启用' : '禁用'}`);
+    console.log(`[MockMonkey] Rule ${enabled ? 'enabled' : 'disabled'}`);
   }
 
   /**
-   * 编辑规则
+   * Edit rule
    */
   private handleEditRule(id: string, rule: RuleFormData): void {
     const success = this.manager.update(id, {
@@ -100,25 +100,25 @@ class MockMonkey {
     });
     if (success) {
       this.updateRulesList();
-      console.log('[MockMonkey] 规则已更新');
+      console.log('[MockMonkey] Rule updated');
     } else {
-      console.error('[MockMonkey] 规则更新失败：找不到规则');
+      console.error('[MockMonkey] Rule update failed: rule not found');
     }
   }
 
   /**
-   * 删除规则
+   * Delete rule
    */
   private handleDeleteRule(id: string): void {
-    if (confirm('确定要删除这条规则吗？')) {
+    if (confirm('Are you sure you want to delete this rule?')) {
       this.manager.remove(id);
       this.updateRulesList();
-      console.log('[MockMonkey] 规则已删除');
+      console.log('[MockMonkey] Rule deleted');
     }
   }
 
   /**
-   * 更新规则列表
+   * Update rules list
    */
   private updateRulesList(): void {
     const rules = this.manager.getAll().map((rule) => ({
@@ -133,10 +133,10 @@ class MockMonkey {
   }
 }
 
-// 启动
+// Start
 MockMonkey.getInstance().start();
 
-// 暴露到全局（用于控制台调试）
+// Expose to global (for console debugging)
 declare global {
   interface Window {
     mockMonkey: {
@@ -167,14 +167,14 @@ window.mockMonkey = {
   },
   list: () => {
     const manager = MockMonkey.getInstance()['manager'] as MockManager;
-    console.log('[MockMonkey] 当前规则:');
+    console.log('[MockMonkey] Current rules:');
     manager.getAll().forEach((rule) => {
       console.log(`  ${rule.enabled ? '✓' : '✗'} ${rule.pattern}`, rule);
     });
   },
   listRequests: () => {
     const recorder = MockMonkey.getInstance()['recorder'] as RequestRecorder;
-    console.log('[MockMonkey] 网络请求记录:');
+    console.log('[MockMonkey] Network request records:');
     recorder.getRequests().forEach((req) => {
       console.log(`  ${req.mocked ? '🟢 MOCK' : '⚪ REAL'} ${req.method} ${req.url}`, req);
     });
@@ -182,7 +182,7 @@ window.mockMonkey = {
   clearRequests: () => {
     const recorder = MockMonkey.getInstance()['recorder'] as RequestRecorder;
     recorder.clear();
-    console.log('[MockMonkey] 网络请求记录已清空');
+    console.log('[MockMonkey] Network request records cleared');
   },
   manager: MockMonkey.getInstance()['manager'] as MockManager,
   recorder: MockMonkey.getInstance()['recorder'] as RequestRecorder
