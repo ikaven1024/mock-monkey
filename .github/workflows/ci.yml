@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
+    tags:
+      - 'v*'
   pull_request:
 
 jobs:
@@ -65,3 +67,34 @@ jobs:
           name: mock-monkey-user-js
           path: mock-monkey.user.js
           retention-days: 30
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Create Release and upload asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: mock-monkey.user.js
+          generate_release_notes: true
+          draft: false
+          prerelease: false
