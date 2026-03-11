@@ -52,14 +52,17 @@ MockMonkey/
 │   ├── RequestRecorder.test.ts  # 请求记录器测试
 │   └── setup.ts                 # 测试环境设置
 ├── vendor/
-│   └── mock.min.js              # Mock.js 库
-├── dist/                        # 构建输出目录
-├── mock-monkey.user.js          # 生成的 Tampermonkey 脚本
+│   └── mock.js                  # Mock.js 库
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # CI/CD 工作流（构建并创建 Release）
 ├── vite.config.ts               # Vite 配置
 ├── vitest.config.ts             # Vitest 配置
 ├── tsconfig.json                # TypeScript 配置
 └── package.json                 # 项目配置
 ```
+
+> **注意**：`mock-monkey.user.js` 由源码构建生成，并自动上传到 [GitHub Releases](https://github.com/ikaven1024/mock-monkey/releases)。可从上方徽章安装，或运行 `npm run build` 本地生成。
 
 ## 开发
 

@@ -52,14 +52,17 @@ MockMonkey/
 │   ├── RequestRecorder.test.ts  # Request recorder tests
 │   └── setup.ts                 # Test environment setup
 ├── vendor/
-│   └── mock.min.js              # Mock.js library
-├── dist/                        # Build output directory
-├── mock-monkey.user.js          # Generated Tampermonkey script
+│   └── mock.js                  # Mock.js library
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # CI/CD workflow (builds and creates releases)
 ├── vite.config.ts               # Vite configuration
 ├── vitest.config.ts             # Vitest configuration
 ├── tsconfig.json                # TypeScript configuration
 └── package.json                 # Project configuration
 ```
+
+> **Note**: `mock-monkey.user.js` is built from source and automatically uploaded to [GitHub Releases](https://github.com/ikaven1024/mock-monkey/releases). Install it from the badge above or run `npm run build` to generate locally.
 
 ## Development
 
