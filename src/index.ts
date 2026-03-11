@@ -2,6 +2,7 @@ import { MockManager } from './core/MockManager';
 import { Interceptor } from './core/Interceptor';
 import { RequestRecorder } from './core/RequestRecorder';
 import { PanelWithCallbacks, type RuleItem, type RuleFormData } from './ui/Panel';
+import { I18n } from './i18n';
 
 /**
  * MockMonkey main class
@@ -13,11 +14,13 @@ class MockMonkey {
   private interceptor: Interceptor;
   private panel: PanelWithCallbacks;
   private recorder: RequestRecorder;
+  private i18n: I18n;
 
   private constructor() {
     this.recorder = new RequestRecorder();
     this.manager = new MockManager();
     this.interceptor = new Interceptor(this.manager, this.recorder);
+    this.i18n = I18n.getInstance();
     this.panel = new PanelWithCallbacks(
       (rule) => this.handleAddRule(rule),
       {
@@ -110,7 +113,7 @@ class MockMonkey {
    * Delete rule
    */
   private handleDeleteRule(id: string): void {
-    if (confirm('[MockMonkey] Are you sure you want to delete this rule?')) {
+    if (confirm(`[MockMonkey] ${this.i18n.t('common.confirmDelete')}`)) {
       this.manager.remove(id);
       this.updateRulesList();
       console.log('[MockMonkey] Rule deleted');

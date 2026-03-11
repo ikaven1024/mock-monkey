@@ -32,8 +32,8 @@ export class Panel {
     private onUpdateRule?: (id: string, rule: RuleFormData) => void,
     private onCreateFromRequest?: (request: NetworkRequest) => void
   ) {
-    // Initialize i18n
-    this.i18n = new I18n();
+    // Initialize i18n (singleton)
+    this.i18n = I18n.getInstance();
     // Load saved position from localStorage
     this.loadButtonPosition();
   }

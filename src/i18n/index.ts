@@ -23,6 +23,7 @@ export interface CommonTranslations {
   cancel: string;
   save: string;
   details: string;
+  confirmDelete: string;
 }
 
 export interface TabsTranslations {
@@ -78,7 +79,8 @@ const translations: Record<Language, TranslationKey> = {
       disable: '禁用',
       cancel: '取消',
       save: '保存',
-      details: '详情'
+      details: '详情',
+      confirmDelete: '确定要删除这条规则吗？'
     },
     tabs: {
       rules: '规则',
@@ -126,7 +128,8 @@ const translations: Record<Language, TranslationKey> = {
       disable: 'Disable',
       cancel: 'Cancel',
       save: 'Save',
-      details: 'Details'
+      details: 'Details',
+      confirmDelete: 'Are you sure you want to delete this rule?'
     },
     tabs: {
       rules: 'Rules',
@@ -168,15 +171,26 @@ const translations: Record<Language, TranslationKey> = {
 };
 
 /**
- * i18n manager class
+ * i18n manager class (singleton)
  */
 export class I18n {
+  private static instance: I18n;
   private _language: Language;
   private readonly STORAGE_KEY = 'mock-monkey-language';
 
-  constructor() {
+  private constructor() {
     // Load language from localStorage or use default
     this._language = this.loadLanguage();
+  }
+
+  /**
+   * Get singleton instance
+   */
+  static getInstance(): I18n {
+    if (!I18n.instance) {
+      I18n.instance = new I18n();
+    }
+    return I18n.instance;
   }
 
   /**
