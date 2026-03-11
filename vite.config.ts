@@ -4,8 +4,9 @@ import { resolve } from 'path';
 
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
-// 读取 Mock.js 库代码
-const mockJsCode = readFileSync('./vendor/mock.min.js', 'utf-8');
+// Use uncompressed Mock.js for Greasy Fork compatibility
+// Greasy Fork requires code to be uncompressed and readable
+const mockJsCode = readFileSync('./vendor/mock.js', 'utf-8');
 
 const userscriptHeader = `// ==UserScript==
 // @name         ${pkg.name}
