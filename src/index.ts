@@ -110,7 +110,7 @@ class MockMonkey {
    * Delete rule
    */
   private handleDeleteRule(id: string): void {
-    if (confirm('Are you sure you want to delete this rule?')) {
+    if (confirm('[MockMonkey] Are you sure you want to delete this rule?')) {
       this.manager.remove(id);
       this.updateRulesList();
       console.log('[MockMonkey] Rule deleted');
