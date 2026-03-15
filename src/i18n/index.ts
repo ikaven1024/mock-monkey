@@ -12,6 +12,7 @@ export interface TranslationKey {
   rules: RulesTranslations;
   form: FormTranslations;
   network: NetworkTranslations;
+  methods: MethodsTranslations;
 }
 
 export interface CommonTranslations {
@@ -30,6 +31,7 @@ export interface TabsTranslations {
   rules: string;
   add: string;
   network: string;
+  methods: string;
 }
 
 export interface RulesTranslations {
@@ -72,6 +74,28 @@ export interface NetworkTranslations {
   noResults: string;
 }
 
+export interface MethodsTranslations {
+  count: string;
+  add: string;
+  edit: string;
+  save: string;
+  cancel: string;
+  empty: string;
+  emptyHint: string;
+  name: string;
+  namePlaceholder: string;
+  description: string;
+  descriptionPlaceholder: string;
+  code: string;
+  codePlaceholder: string;
+  deleteConfirm: string;
+  contextHelp: string;
+  contextUrl: string;
+  contextMethod: string;
+  contextBody: string;
+  alphaWarning: string;
+}
+
 /**
  * Translation texts
  */
@@ -91,7 +115,8 @@ const translations: Record<Language, TranslationKey> = {
     tabs: {
       rules: '规则',
       add: '添加',
-      network: '网络'
+      network: '网络',
+      methods: '方法'
     },
     rules: {
       count: '条规则',
@@ -129,6 +154,27 @@ const translations: Record<Language, TranslationKey> = {
       search: '搜索',
       searchPlaceholder: '搜索 URL 请求...',
       noResults: '未找到匹配的请求'
+    },
+    methods: {
+      count: '个方法',
+      add: '添加方法',
+      edit: '编辑方法',
+      save: '保存方法',
+      cancel: '取消',
+      empty: '暂无自定义方法',
+      emptyHint: '点击"添加方法"创建自定义 Mock 函数',
+      name: '名称 *',
+      namePlaceholder: 'getUserList',
+      description: '描述',
+      descriptionPlaceholder: '获取用户列表',
+      code: '代码 *',
+      codePlaceholder: 'return { users: [...] };',
+      deleteConfirm: '确定要删除这个方法吗？',
+      contextHelp: '可用变量',
+      contextUrl: 'context.url - 请求 URL',
+      contextMethod: 'context.method - 请求方法',
+      contextBody: 'context.body - 请求体',
+      alphaWarning: 'Alpha 功能：自定义方法正在开发中，API 可能会变更。使用需谨慎，避免在生产环境使用。'
     }
   },
   en: {
@@ -146,7 +192,8 @@ const translations: Record<Language, TranslationKey> = {
     tabs: {
       rules: 'Rules',
       add: 'Add',
-      network: 'Network'
+      network: 'Network',
+      methods: 'Methods'
     },
     rules: {
       count: 'rules',
@@ -184,6 +231,27 @@ const translations: Record<Language, TranslationKey> = {
       search: 'Search',
       searchPlaceholder: 'Search URL requests...',
       noResults: 'No matching requests found'
+    },
+    methods: {
+      count: 'methods',
+      add: 'Add Method',
+      edit: 'Edit Method',
+      save: 'Save Method',
+      cancel: 'Cancel',
+      empty: 'No custom methods yet',
+      emptyHint: 'Click "Add Method" to create custom Mock functions',
+      name: 'Name *',
+      namePlaceholder: 'getUserList',
+      description: 'Description',
+      descriptionPlaceholder: 'Get user list',
+      code: 'Code *',
+      codePlaceholder: 'return { users: [...] };',
+      deleteConfirm: 'Are you sure you want to delete this method?',
+      contextHelp: 'Available variables',
+      contextUrl: 'context.url - Request URL',
+      contextMethod: 'context.method - Request method',
+      contextBody: 'context.body - Request body',
+      alphaWarning: 'Alpha Feature: Custom methods are under development. APIs may change. Use with caution, not recommended for production.'
     }
   }
 };

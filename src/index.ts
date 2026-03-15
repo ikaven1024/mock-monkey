@@ -1,7 +1,8 @@
 import { MockManager } from './core/MockManager';
 import { Interceptor } from './core/Interceptor';
 import { RequestRecorder } from './core/RequestRecorder';
-import { PanelWithCallbacks, type RuleItem, type RuleFormData } from './ui/Panel';
+import { MethodManager, type MockMethod } from './core/MethodManager';
+import { PanelWithCallbacks, type RuleItem, type RuleFormData, type MethodCallbacks, type CreateMockMethodParams } from './ui/Panel';
 import { I18n } from './i18n';
 
 /**
@@ -14,20 +15,33 @@ class MockMonkey {
   private interceptor: Interceptor;
   private panel: PanelWithCallbacks;
   private recorder: RequestRecorder;
+  private methodManager: MethodManager;
   private i18n: I18n;
 
   private constructor() {
     this.recorder = new RequestRecorder();
     this.manager = new MockManager();
-    this.interceptor = new Interceptor(this.manager, this.recorder);
+    this.methodManager = new MethodManager();
+    this.interceptor = new Interceptor(this.manager, this.recorder, this.methodManager);
     this.i18n = I18n.getInstance();
+
+    // Method callbacks
+    const methodCallbacks: MethodCallbacks = {
+      onAdd: (method) => this.handleAddMethod(method),
+      onUpdate: (id, method) => this.handleUpdateMethod(id, method),
+      onDelete: (id) => this.handleDeleteMethod(id),
+      onToggle: (id) => this.handleToggleMethod(id)
+    };
+
     this.panel = new PanelWithCallbacks(
       (rule) => this.handleAddRule(rule),
       {
         onToggle: (id) => this.handleToggleRule(id),
         onEdit: (id, rule) => this.handleEditRule(id, rule),
         onDelete: (id) => this.handleDeleteRule(id)
-      }
+      },
+      undefined,
+      methodCallbacks
     );
 
     // Subscribe to request changes, update panel
@@ -68,8 +82,9 @@ class MockMonkey {
     // Initialize panel
     this.panel.init();
 
-    // Initial update of rules list
+    // Initial update of rules and methods list
     this.updateRulesList();
+    this.updateMethodsList();
 
     console.log('[MockMonkey] Started! Click the 🐵 button in the bottom right to open the management panel');
   }
@@ -134,6 +149,54 @@ class MockMonkey {
     }));
     this.panel.updateRules(rules);
   }
+
+  /**
+   * Add method
+   */
+  private handleAddMethod(method: CreateMockMethodParams): void {
+    this.methodManager.add(method);
+    this.updateMethodsList();
+    console.log('[MockMonkey] Method added');
+  }
+
+  /**
+   * Update method
+   */
+  private handleUpdateMethod(id: string, method: CreateMockMethodParams): void {
+    const success = this.methodManager.update(id, method);
+    if (success) {
+      this.updateMethodsList();
+      console.log('[MockMonkey] Method updated');
+    } else {
+      console.error('[MockMonkey] Method update failed: method not found');
+    }
+  }
+
+  /**
+   * Delete method
+   */
+  private handleDeleteMethod(id: string): void {
+    this.methodManager.remove(id);
+    this.updateMethodsList();
+    console.log('[MockMonkey] Method deleted');
+  }
+
+  /**
+   * Toggle method status
+   */
+  private handleToggleMethod(id: string): void {
+    const enabled = this.methodManager.toggle(id);
+    this.updateMethodsList();
+    console.log(`[MockMonkey] Method ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * Update methods list
+   */
+  private updateMethodsList(): void {
+    const methods = this.methodManager.getAll();
+    this.panel.updateMethods(methods);
+  }
 }
 
 // Start
@@ -151,6 +214,13 @@ declare global {
       clearRequests: () => void;
       manager: MockManager;
       recorder: RequestRecorder;
+      methods: {
+        add: (name: string, code: string, description?: string) => void;
+        remove: (name: string) => void;
+        clear: () => void;
+        list: () => void;
+        manager: MethodManager;
+      };
     };
   }
 }
@@ -188,5 +258,27 @@ window.mockMonkey = {
     console.log('[MockMonkey] Network request records cleared');
   },
   manager: MockMonkey.getInstance()['manager'] as MockManager,
-  recorder: MockMonkey.getInstance()['recorder'] as RequestRecorder
+  recorder: MockMonkey.getInstance()['recorder'] as RequestRecorder,
+  methods: {
+    add: (name: string, code: string, description?: string) => {
+      MockMonkey.getInstance()['methodManager'].add({ name, code, description });
+      MockMonkey.getInstance()['updateMethodsList']();
+    },
+    remove: (name: string) => {
+      MockMonkey.getInstance()['methodManager'].removeByName(name);
+      MockMonkey.getInstance()['updateMethodsList']();
+    },
+    clear: () => {
+      MockMonkey.getInstance()['methodManager'].clear();
+      MockMonkey.getInstance()['updateMethodsList']();
+    },
+    list: () => {
+      const methodManager = MockMonkey.getInstance()['methodManager'] as MethodManager;
+      console.log('[MockMonkey] Current methods:');
+      methodManager.getAll().forEach((method) => {
+        console.log(`  ${method.enabled ? '✓' : '✗'} @${method.name}`, method);
+      });
+    },
+    manager: MockMonkey.getInstance()['methodManager'] as MethodManager
+  }
 };

@@ -81,3 +81,45 @@ export interface NetworkRequest {
   /** Request duration (ms) */
   duration?: number;
 }
+
+/**
+ * Custom Mock method
+ */
+export interface MockMethod {
+  /** Method ID */
+  id: string;
+  /** Method name (for @functionName reference) */
+  name: string;
+  /** Function code (function body) */
+  code: string;
+  /** Method description */
+  description?: string;
+  /** Whether enabled */
+  enabled: boolean;
+  /** Creation timestamp */
+  createdAt: number;
+}
+
+/**
+ * Create method parameters
+ */
+export interface CreateMockMethodParams {
+  /** Method name (for @functionName reference) */
+  name: string;
+  /** Function code (function body) */
+  code: string;
+  /** Method description */
+  description?: string;
+}
+
+/**
+ * Method execution context
+ */
+export interface MethodContext {
+  /** Request URL */
+  url: string;
+  /** Request method */
+  method: string;
+  /** Request body */
+  body?: string;
+}

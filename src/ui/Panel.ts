@@ -1,5 +1,8 @@
-import type { NetworkRequest } from '../types';
+import type { NetworkRequest, MockMethod, CreateMockMethodParams, MethodContext } from '../types';
 import { I18n } from '../i18n';
+
+// Re-export types for convenience
+export type { MockMethod, CreateMockMethodParams, MethodContext };
 
 /**
  * UI panel manager
@@ -31,10 +34,18 @@ export class Panel {
   private rulesSearchQuery = '';
   private requestsSearchQuery = '';
 
+  // Methods state
+  private currentMethods: MockMethod[] = [];
+  private editingMethodId: string | null = null;
+
   constructor(
     private onAddRule: (rule: RuleFormData) => void,
     private onUpdateRule?: (id: string, rule: RuleFormData) => void,
-    private onCreateFromRequest?: (request: NetworkRequest) => void
+    private onCreateFromRequest?: (request: NetworkRequest) => void,
+    private onAddMethod?: (method: CreateMockMethodParams) => void,
+    private onUpdateMethod?: (id: string, method: CreateMockMethodParams) => void,
+    private onDeleteMethod?: (id: string) => void,
+    private onToggleMethod?: (id: string) => void
   ) {
     // Initialize i18n (singleton)
     this.i18n = I18n.getInstance();
@@ -116,6 +127,10 @@ export class Panel {
         <button class="mm-tab mm-tab--active" data-tab="rules">${this.i18n.t('tabs.rules')}</button>
         <button class="mm-tab" data-tab="add" data-tab-label>${this.i18n.t('tabs.add')}</button>
         <button class="mm-tab" data-tab="requests">${this.i18n.t('tabs.network')}</button>
+        <button class="mm-tab" data-tab="methods">
+          ${this.i18n.t('tabs.methods')}
+          <span class="mm-tab-alpha">ALPHA</span>
+        </button>
       </div>
 
       <div class="mm-content">
@@ -184,6 +199,49 @@ export class Panel {
             </div>
           </div>
           <div class="mm-requests-list" data-requests-list></div>
+        </div>
+
+        <div class="mm-tab-content" data-content="methods">
+          <div class="mm-methods-container">
+            <div class="mm-methods-list-section">
+              <div class="mm-toolbar">
+                <span class="mm-count">0 ${this.i18n.t('methods.count')}</span>
+                <button class="mm-btn mm-btn--small mm-btn--primary" data-action="add-method">${this.i18n.t('methods.add')}</button>
+              </div>
+              <div class="mm-methods-list" data-methods-list></div>
+            </div>
+            <div class="mm-method-form-section" style="display: none;">
+              <form class="mm-form" data-action="method-form">
+                <input type="hidden" name="editing-id" value="">
+
+                <div class="mm-form-group">
+                  <label class="mm-label">${this.i18n.t('methods.name')}</label>
+                  <input class="mm-input" type="text" name="name" placeholder="${this.i18n.t('methods.namePlaceholder')}" required>
+                </div>
+
+                <div class="mm-form-group">
+                  <label class="mm-label">${this.i18n.t('methods.description')}</label>
+                  <input class="mm-input" type="text" name="description" placeholder="${this.i18n.t('methods.descriptionPlaceholder')}">
+                </div>
+
+                <div class="mm-form-group">
+                  <label class="mm-label">${this.i18n.t('methods.code')}</label>
+                  <textarea class="mm-textarea" name="code" placeholder="${this.i18n.t('methods.codePlaceholder')}" required rows="8"></textarea>
+                  <details class="mm-context-help">
+                    <summary class="mm-context-help-title">${this.i18n.t('methods.contextHelp')}</summary>
+                    <code class="mm-code">${this.i18n.t('methods.contextUrl')}</code><br>
+                    <code class="mm-code">${this.i18n.t('methods.contextMethod')}</code><br>
+                    <code class="mm-code">${this.i18n.t('methods.contextBody')}</code>
+                  </details>
+                </div>
+
+                <div class="mm-form-actions">
+                  <button type="button" class="mm-btn" data-action="cancel-method">${this.i18n.t('methods.cancel')}</button>
+                  <button type="submit" class="mm-btn mm-btn--primary" data-submit-method-btn>${this.i18n.t('methods.save')}</button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -700,6 +758,22 @@ export class Panel {
       });
     }
 
+    // Methods - Add method button
+    this.shadowRoot.querySelector('[data-action="add-method"]')?.addEventListener('click', () => {
+      this.showMethodForm();
+    });
+
+    // Methods - Cancel method button
+    this.shadowRoot.querySelector('[data-action="cancel-method"]')?.addEventListener('click', () => {
+      this.hideMethodForm();
+    });
+
+    // Methods - Form submit
+    this.shadowRoot.querySelector('[data-action="method-form"]')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.handleMethodSubmit(e);
+    });
+
     // Prevent wheel event propagation from panel to main page
     const panel = this.shadowRoot.querySelector('.mm-panel');
     if (panel) {
@@ -764,6 +838,9 @@ export class Panel {
         (tab as HTMLElement).textContent = isEditing ? this.i18n.t('common.edit') : this.i18n.t('tabs.add');
       } else if (tabName === 'requests') {
         tab.textContent = this.i18n.t('tabs.network');
+      } else if (tabName === 'methods') {
+        // Use innerHTML to preserve ALPHA badge
+        (tab as HTMLElement).innerHTML = `${this.i18n.t('tabs.methods')}<span class="mm-tab-alpha">ALPHA</span>`;
       }
     });
 
@@ -809,9 +886,63 @@ export class Panel {
     const requestsSearchInput = this.shadowRoot.querySelector('[data-search="requests"]') as HTMLInputElement;
     if (requestsSearchInput) requestsSearchInput.placeholder = this.i18n.t('network.searchPlaceholder');
 
+    // Update methods page
+    const addMethodBtn = this.shadowRoot.querySelector('[data-action="add-method"]') as HTMLElement;
+    if (addMethodBtn) addMethodBtn.textContent = this.i18n.t('methods.add');
+
+    const submitMethodBtn = this.shadowRoot.querySelector('[data-submit-method-btn]') as HTMLElement;
+    if (submitMethodBtn) {
+      submitMethodBtn.textContent = this.editingMethodId ? this.i18n.t('methods.edit') : this.i18n.t('methods.add');
+    }
+
+    const cancelMethodBtn = this.shadowRoot.querySelector('[data-action="cancel-method"]') as HTMLElement;
+    if (cancelMethodBtn) cancelMethodBtn.textContent = this.i18n.t('methods.cancel');
+
+    // Update method form labels
+    const methodForm = this.shadowRoot.querySelector('[data-action="method-form"]') as HTMLFormElement;
+    if (methodForm) {
+      const formGroups = methodForm.querySelectorAll('.mm-form-group');
+
+      // Name label
+      if (formGroups[0]) {
+        const nameLabel = formGroups[0].querySelector('.mm-label') as HTMLElement;
+        if (nameLabel) nameLabel.textContent = this.i18n.t('methods.name');
+        const nameInput = formGroups[0].querySelector('input') as HTMLInputElement;
+        if (nameInput && !this.editingMethodId) nameInput.placeholder = this.i18n.t('methods.namePlaceholder');
+      }
+
+      // Description label
+      if (formGroups[1]) {
+        const descLabel = formGroups[1].querySelector('.mm-label') as HTMLElement;
+        if (descLabel) descLabel.textContent = this.i18n.t('methods.description');
+        const descInput = formGroups[1].querySelector('input') as HTMLInputElement;
+        if (descInput && !this.editingMethodId) descInput.placeholder = this.i18n.t('methods.descriptionPlaceholder');
+      }
+
+      // Code label
+      if (formGroups[2]) {
+        const codeLabel = formGroups[2].querySelector('.mm-label') as HTMLElement;
+        if (codeLabel) codeLabel.textContent = this.i18n.t('methods.code');
+        const codeInput = formGroups[2].querySelector('textarea') as HTMLTextAreaElement;
+        if (codeInput && !this.editingMethodId) codeInput.placeholder = this.i18n.t('methods.codePlaceholder');
+
+        // Context help
+        const contextHelp = formGroups[2].querySelector('details.mm-context-help') as HTMLDetailsElement;
+        if (contextHelp) {
+          const contextTitle = contextHelp.querySelector('summary.mm-context-help-title') as HTMLElement;
+          if (contextTitle) contextTitle.textContent = this.i18n.t('methods.contextHelp');
+          const contextCodes = contextHelp.querySelectorAll('.mm-code') as NodeListOf<HTMLElement>;
+          if (contextCodes[0]) contextCodes[0].textContent = this.i18n.t('methods.contextUrl');
+          if (contextCodes[1]) contextCodes[1].textContent = this.i18n.t('methods.contextMethod');
+          if (contextCodes[2]) contextCodes[2].textContent = this.i18n.t('methods.contextBody');
+        }
+      }
+    }
+
     // Refresh rules list and network requests to update their content
     this.updateRules(this.currentRules);
     this.updateNetworkRequests(this.networkRequests);
+    this.updateMethods(this.currentMethods);
   }
 
   /**
@@ -1132,6 +1263,193 @@ export class Panel {
   }
 
   /**
+   * Update methods list
+   */
+  updateMethods(methods: MockMethod[]): void {
+    this.currentMethods = methods;
+    if (!this.shadowRoot) return;
+
+    const listContainer = this.shadowRoot.querySelector('[data-methods-list]');
+    const countEl = this.shadowRoot.querySelector('[data-content="methods"] .mm-count');
+    if (!listContainer) return;
+
+    if (countEl) {
+      countEl.textContent = `${methods.length} ${this.i18n.t('methods.count')}`;
+    }
+
+    if (methods.length === 0) {
+      listContainer.innerHTML = `
+        <div class="mm-empty">
+          <p>${this.i18n.t('methods.empty')}</p>
+          <p class="mm-hint">${this.i18n.t('methods.emptyHint')}</p>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = methods.map(method => `
+      <div class="mm-method-item ${method.enabled ? '' : 'mm-method-item--disabled'}">
+        <div class="mm-method-header">
+          <div class="mm-method-name">
+            <code>@${method.name}</code>
+            ${!method.enabled ? `<span class="mm-badge mm-badge--disabled">${this.i18n.t('common.disable')}</span>` : ''}
+          </div>
+          <div class="mm-method-actions">
+            <button class="mm-btn mm-btn--small" data-action="toggle-method" data-id="${method.id}">
+              ${method.enabled ? this.i18n.t('common.disable') : this.i18n.t('common.enable')}
+            </button>
+            <button class="mm-btn mm-btn--small" data-action="edit-method" data-id="${method.id}">${this.i18n.t('common.edit')}</button>
+            <button class="mm-btn mm-btn--small" data-action="delete-method" data-id="${method.id}">${this.i18n.t('common.delete')}</button>
+          </div>
+        </div>
+        ${method.description ? `<div class="mm-method-description">${method.description}</div>` : ''}
+        <details class="mm-method-details">
+          <summary class="mm-request-summary">${this.i18n.t('common.details')}</summary>
+          <div class="mm-method-code"><code>${this.escapeHtml(method.code)}</code></div>
+        </details>
+      </div>
+    `).join('');
+
+    // Bind method actions
+    listContainer.querySelectorAll('[data-action="toggle-method"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (id && this.onToggleMethod) {
+          this.onToggleMethod(id);
+        }
+      });
+    });
+
+    listContainer.querySelectorAll('[data-action="edit-method"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (id) this.editMethod(id);
+      });
+    });
+
+    listContainer.querySelectorAll('[data-action="delete-method"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (id && this.onDeleteMethod) {
+          if (confirm(this.i18n.t('methods.deleteConfirm'))) {
+            this.onDeleteMethod(id);
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * Show method form
+   */
+  private showMethodForm(method?: MockMethod): void {
+    if (!this.shadowRoot) return;
+
+    const listSection = this.shadowRoot.querySelector('.mm-methods-list-section') as HTMLElement;
+    const formSection = this.shadowRoot.querySelector('.mm-method-form-section') as HTMLElement;
+    const form = this.shadowRoot.querySelector('[data-action="method-form"]') as HTMLFormElement;
+    const submitBtn = this.shadowRoot.querySelector('[data-submit-method-btn]') as HTMLElement;
+
+    if (listSection) listSection.style.display = 'none';
+    if (formSection) formSection.style.display = 'block';
+
+    if (method) {
+      this.editingMethodId = method.id;
+      if (submitBtn) submitBtn.textContent = this.i18n.t('methods.edit');
+
+      // Fill form
+      const nameInput = this.shadowRoot.querySelector('[name="name"]') as HTMLInputElement;
+      const descInput = this.shadowRoot.querySelector('[name="description"]') as HTMLInputElement;
+      const codeInput = this.shadowRoot.querySelector('[name="code"]') as HTMLTextAreaElement;
+      const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
+
+      if (nameInput) nameInput.value = method.name;
+      if (descInput) descInput.value = method.description || '';
+      if (codeInput) codeInput.value = method.code;
+      if (editingIdInput) editingIdInput.value = method.id;
+    } else {
+      // Add new method - pre-fill with selflink example
+      this.editingMethodId = null;
+      if (submitBtn) submitBtn.textContent = this.i18n.t('methods.add');
+
+      const nameInput = this.shadowRoot.querySelector('[name="name"]') as HTMLInputElement;
+      const descInput = this.shadowRoot.querySelector('[name="description"]') as HTMLInputElement;
+      const codeInput = this.shadowRoot.querySelector('[name="code"]') as HTMLTextAreaElement;
+      const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
+
+      if (nameInput) nameInput.value = 'selflink';
+      if (descInput) descInput.value = 'Return current request URL';
+      if (codeInput) codeInput.value = 'return context.url;';
+      if (editingIdInput) editingIdInput.value = '';
+    }
+  }
+
+  /**
+   * Hide method form
+   */
+  private hideMethodForm(): void {
+    if (!this.shadowRoot) return;
+
+    const listSection = this.shadowRoot.querySelector('.mm-methods-list-section') as HTMLElement;
+    const formSection = this.shadowRoot.querySelector('.mm-method-form-section') as HTMLElement;
+    const form = this.shadowRoot.querySelector('[data-action="method-form"]') as HTMLFormElement;
+
+    if (listSection) listSection.style.display = 'block';
+    if (formSection) formSection.style.display = 'none';
+    if (form) form.reset();
+
+    this.editingMethodId = null;
+  }
+
+  /**
+   * Handle method form submit
+   */
+  private handleMethodSubmit(e: Event): void {
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+
+    const name = formData.get('name') as string;
+    const description = formData.get('description') as string;
+    const code = formData.get('code') as string;
+    const editingId = formData.get('editing-id') as string;
+
+    if (!name.trim() || !code.trim()) {
+      alert('Name and code are required');
+      return;
+    }
+
+    const methodData: CreateMockMethodParams = {
+      name: name.trim(),
+      code: code.trim(),
+      description: description?.trim() || undefined
+    };
+
+    if (editingId) {
+      // Update existing method
+      if (this.onUpdateMethod) {
+        this.onUpdateMethod(editingId, methodData);
+      }
+    } else {
+      // Add new method
+      if (this.onAddMethod) {
+        this.onAddMethod(methodData);
+      }
+    }
+
+    this.hideMethodForm();
+  }
+
+  /**
+   * Edit method
+   */
+  private editMethod(id: string): void {
+    const method = this.currentMethods.find(m => m.id === id);
+    if (method) {
+      this.showMethodForm(method);
+    }
+  }
+
+  /**
    * 显示面板
    */
   show(): void {
@@ -1392,6 +1710,18 @@ export class Panel {
       .mm-tab--active {
         color: #4f46e5;
         border-bottom-color: #4f46e5;
+      }
+
+      .mm-tab-alpha {
+        display: inline-block;
+        margin-left: 4px;
+        padding: 2px 6px;
+        font-size: 10px;
+        font-weight: 600;
+        background: #fbbf24;
+        color: #92400e;
+        border-radius: 4px;
+        letter-spacing: 0.5px;
       }
 
       .mm-content {
@@ -1905,6 +2235,136 @@ export class Panel {
       .mm-hidden {
         display: none;
       }
+
+      /* Methods styles */
+      .mm-methods-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .mm-methods-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .mm-method-item {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+        transition: all 0.2s;
+      }
+
+      .mm-method-item:hover {
+        border-color: #d1d5db;
+      }
+
+      .mm-method-item--disabled {
+        opacity: 0.6;
+        background: #f3f4f6;
+      }
+
+      .mm-method-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .mm-method-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .mm-method-name code {
+        background: #e5e7eb;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #4f46e5;
+      }
+
+      .mm-method-actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      .mm-method-description {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 8px;
+      }
+
+      .mm-method-code {
+        background: #1f2937;
+        color: #f9fafb;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 12px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        max-height: 150px;
+        overflow-y: auto;
+      }
+
+      .mm-context-help {
+        margin-top: 8px;
+        padding: 8px 12px;
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        border-radius: 6px;
+      }
+
+      .mm-context-help summary {
+        font-size: 12px;
+        font-weight: 500;
+        color: #16a34a;
+        cursor: pointer;
+        user-select: none;
+        list-style: none;
+        padding: 4px 0;
+      }
+
+      .mm-context-help summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .mm-context-help summary::before {
+        content: '▶';
+        display: inline-block;
+        font-size: 10px;
+        margin-right: 6px;
+        transition: transform 0.2s;
+      }
+
+      .mm-context-help[open] summary::before {
+        transform: rotate(90deg);
+      }
+
+      .mm-context-help code {
+        display: block;
+        font-size: 11px;
+        color: #374151;
+        background: #fff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-top: 4px;
+        font-family: 'Monaco', 'Menlo', monospace;
+      }
+
+      .mm-method-form-section {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 16px;
+      }
     `;
   }
 }
@@ -1942,14 +2402,33 @@ export interface RuleCallbacks {
   onDelete: (id: string) => void;
 }
 
+/**
+ * Method operation callbacks
+ */
+export interface MethodCallbacks {
+  onAdd: (method: CreateMockMethodParams) => void;
+  onUpdate: (id: string, method: CreateMockMethodParams) => void;
+  onDelete: (id: string) => void;
+  onToggle: (id: string) => void;
+}
+
 // Extend Panel class to support callbacks
 export class PanelWithCallbacks extends Panel {
   constructor(
     onAddRule: (rule: RuleFormData) => void,
     private callbacks: RuleCallbacks,
-    onCreateFromRequest?: (request: NetworkRequest) => void
+    onCreateFromRequest?: (request: NetworkRequest) => void,
+    private methodCallbacks?: MethodCallbacks
   ) {
-    super(onAddRule, callbacks.onEdit, onCreateFromRequest);
+    super(
+      onAddRule,
+      callbacks.onEdit,
+      onCreateFromRequest,
+      methodCallbacks?.onAdd,
+      methodCallbacks?.onUpdate,
+      methodCallbacks?.onDelete,
+      methodCallbacks?.onToggle
+    );
   }
 
   onToggleRule(id: string): void {
@@ -1962,5 +2441,9 @@ export class PanelWithCallbacks extends Panel {
 
   onDeleteRule(id: string): void {
     this.callbacks.onDelete(id);
+  }
+
+  updateMethods(methods: MockMethod[]): void {
+    super.updateMethods(methods);
   }
 }

@@ -1,6 +1,7 @@
-import type { MockRule } from '../types';
+import type { MockRule, MethodContext } from '../types';
 import { MockManager } from './MockManager';
 import { RequestRecorder } from './RequestRecorder';
+import { MethodManager } from './MethodManager';
 
 /**
  * Request interceptor - Intercepts XHR and Fetch requests
@@ -12,7 +13,8 @@ export class Interceptor {
 
   constructor(
     private manager: MockManager,
-    private recorder: RequestRecorder
+    private recorder: RequestRecorder,
+    private methodManager: MethodManager
   ) {
     this.xhrOpen = XMLHttpRequest.prototype.open;
     this.xhrSend = XMLHttpRequest.prototype.send;
@@ -217,23 +219,11 @@ export class Interceptor {
     setTimeout(() => {
       const duration = Date.now() - requestTime;
 
-      // Use Mock.js to parse template
-      let mockResponse = rule.response;
-      if (typeof window !== 'undefined' && (window as any).Mock) {
-        try {
-          const originalResponse = JSON.stringify(rule.response);
-          mockResponse = (window as any).Mock.mock(rule.response);
-          const mockResponseStr = JSON.stringify(mockResponse);
-          if (originalResponse !== mockResponseStr) {
-            console.log('[MockMonkey] Mock.js 已解析模板');
-          }
-        } catch (e) {
-          console.warn('[MockMonkey] Mock.js 解析失败，使用原始响应:', e);
-          mockResponse = rule.response;
-        }
-      } else {
-        console.warn('[MockMonkey] Mock.js 未加载，占位符将不会被替换');
-      }
+      // Get request context for custom methods
+      const context = this.getRequestContext(xhr);
+
+      // Process mock response
+      let mockResponse = this.processMockResponse(rule.response, context);
 
       Object.defineProperty(xhr, 'readyState', {
         value: 4,
@@ -285,23 +275,16 @@ export class Interceptor {
         const duration = Date.now() - requestTime;
         const headers = rule.options.headers || { 'Content-Type': 'application/json' };
 
-        // Use Mock.js to parse template
-        let mockResponse = rule.response;
-        if (typeof window !== 'undefined' && (window as any).Mock) {
-          try {
-            const originalResponse = JSON.stringify(rule.response);
-            mockResponse = (window as any).Mock.mock(rule.response);
-            const mockResponseStr = JSON.stringify(mockResponse);
-            if (originalResponse !== mockResponseStr) {
-              console.log('[MockMonkey] Mock.js 已解析模板');
-            }
-          } catch (e) {
-            console.warn('[MockMonkey] Mock.js 解析失败，使用原始响应:', e);
-            mockResponse = rule.response;
-          }
-        } else {
-          console.warn('[MockMonkey] Mock.js 未加载，占位符将不会被替换');
-        }
+        // Get request context from recorder
+        const request = this.recorder.getRequests().find(r => r.id === requestId);
+        const context: MethodContext = request ? {
+          url: request.url,
+          method: request.method,
+          body: request.body
+        } : { url: '', method: 'GET' };
+
+        // Process mock response
+        let mockResponse = this.processMockResponse(rule.response, context);
 
         // Update actual duration
         this.recorder.updateRequest(requestId, { duration, response: mockResponse });
@@ -314,5 +297,85 @@ export class Interceptor {
         );
       }, delay);
     });
+  }
+
+  /**
+   * Get request context from XHR object
+   */
+  private getRequestContext(xhr: XMLHttpRequest): MethodContext {
+    const xhrObj = xhr as unknown as Record<string, unknown>;
+    return {
+      url: xhrObj._mockUrl as string || '',
+      method: xhrObj._mockMethod as string || 'GET',
+      body: xhrObj._mockBody as string | undefined
+    };
+  }
+
+  /**
+   * Process mock response with Mock.js and custom methods
+   */
+  private processMockResponse(response: unknown, context: MethodContext): unknown {
+    let processed = response;
+
+    // First, apply Mock.js template parsing
+    if (typeof window !== 'undefined' && (window as any).Mock) {
+      try {
+        const originalResponse = JSON.stringify(response);
+        processed = (window as any).Mock.mock(response);
+        const processedStr = JSON.stringify(processed);
+        if (originalResponse !== processedStr) {
+          console.log('[MockMonkey] Mock.js template parsed');
+        }
+      } catch (e) {
+        console.warn('[MockMonkey] Mock.js parsing failed, using original response:', e);
+        processed = response;
+      }
+    } else {
+      console.warn('[MockMonkey] Mock.js not loaded, placeholders will not be replaced');
+    }
+
+    // Then, apply custom methods (@functionName pattern)
+    processed = this.processCustomMethods(processed, context);
+
+    return processed;
+  }
+
+  /**
+   * Process custom methods in response data
+   * Replaces @functionName patterns with actual method execution results
+   */
+  private processCustomMethods(data: unknown, context: MethodContext): unknown {
+    if (data === null || data === undefined) {
+      return data;
+    }
+
+    // If string, check for @functionName pattern
+    if (typeof data === 'string') {
+      const match = data.match(/^@(\w+)$/);
+      if (match) {
+        const methodName = match[1];
+        const result = this.methodManager.execute(methodName, context);
+        if (result !== null) {
+          return result;
+        }
+      }
+      return data;
+    }
+
+    // If array, process each element
+    if (Array.isArray(data)) {
+      return data.map(item => this.processCustomMethods(item, context));
+    }
+
+    // If object, process each value
+    if (typeof data === 'object') {
+      const result: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+        result[key] = this.processCustomMethods(value, context);
+      }
+      return result;
+    }
+
+    return data;
   }
 }

@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { Interceptor } from '../src/core/Interceptor';
 import { MockManager } from '../src/core/MockManager';
 import { RequestRecorder } from '../src/core/RequestRecorder';
+import { MethodManager } from '../src/core/MethodManager';
 
 // Mock Mock.js
 const mockMock = {
@@ -15,12 +16,14 @@ const mockMock = {
 describe('Interceptor', () => {
   let manager: MockManager;
   let recorder: RequestRecorder;
+  let methodManager: MethodManager;
   let interceptor: Interceptor;
 
   beforeEach(() => {
     manager = new MockManager();
     recorder = new RequestRecorder();
-    interceptor = new Interceptor(manager, recorder);
+    methodManager = new MethodManager();
+    interceptor = new Interceptor(manager, recorder, methodManager);
     vi.clearAllMocks();
     vi.useFakeTimers();
   });
