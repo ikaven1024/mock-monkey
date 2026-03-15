@@ -12,8 +12,8 @@ const userscriptHeader = `// ==UserScript==
 // @name         ${pkg.name}
 // @namespace    https://github.com/ikaven1024/
 // @version      ${pkg.version}
-// @description  ${pkg.description}
-// @description:en  A browser-native API mocking Tampermonkey script that requires no backend
+// @description  浏览器原生 API Mock 工具，无需后端服务。支持 XHR/Fetch 拦截、可视化规则管理、Mock.js 占位符、实时网络监控。
+// @description:en  Browser-native API mocking tool. Intercept XHR/Fetch requests, manage rules visually, use Mock.js placeholders, monitor network in real-time. No backend required.
 // @author       ${pkg.author}
 // @license      MIT
 // @homepageURL  https://github.com/ikaven1024/mock-monkey

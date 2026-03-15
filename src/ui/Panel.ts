@@ -27,6 +27,10 @@ export class Panel {
   private editingRuleId: string | null = null; // Currently editing rule ID
   private i18n: I18n; // i18n instance
 
+  // Search state
+  private rulesSearchQuery = '';
+  private requestsSearchQuery = '';
+
   constructor(
     private onAddRule: (rule: RuleFormData) => void,
     private onUpdateRule?: (id: string, rule: RuleFormData) => void,
@@ -116,10 +120,19 @@ export class Panel {
 
       <div class="mm-content">
         <div class="mm-tab-content mm-tab-content--active" data-content="rules">
-          <div class="mm-rules-header">
-            <span class="mm-rules-count">0 ${this.i18n.t('rules.count')}</span>
-            <button class="mm-btn mm-btn--small" data-action="export">${this.i18n.t('rules.export')}</button>
-            <button class="mm-btn mm-btn--small" data-action="import">${this.i18n.t('rules.import')}</button>
+          <div class="mm-toolbar">
+            <span class="mm-count">0 ${this.i18n.t('rules.count')}</span>
+            <div class="mm-toolbar-actions">
+              <div class="mm-search-wrapper">
+                <svg class="mm-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M14 14L11.1 11.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <input class="mm-search-input" type="text" data-search="rules" placeholder="${this.i18n.t('rules.searchPlaceholder')}">
+              </div>
+              <button class="mm-btn mm-btn--small" data-action="export">${this.i18n.t('rules.export')}</button>
+              <button class="mm-btn mm-btn--small" data-action="import">${this.i18n.t('rules.import')}</button>
+            </div>
           </div>
           <div class="mm-rules-list" data-rules-list></div>
         </div>
@@ -157,9 +170,18 @@ export class Panel {
         </div>
 
         <div class="mm-tab-content" data-content="requests">
-          <div class="mm-rules-header">
-            <span class="mm-rules-count">0 ${this.i18n.t('network.count')}</span>
-            <button class="mm-btn mm-btn--small" data-action="clear-requests">${this.i18n.t('network.clear')}</button>
+          <div class="mm-toolbar">
+            <span class="mm-count">0 ${this.i18n.t('network.count')}</span>
+            <div class="mm-toolbar-actions">
+              <div class="mm-search-wrapper">
+                <svg class="mm-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M14 14L11.1 11.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <input class="mm-search-input" type="text" data-search="requests" placeholder="${this.i18n.t('network.searchPlaceholder')}">
+              </div>
+              <button class="mm-btn mm-btn--small" data-action="clear-requests">${this.i18n.t('network.clear')}</button>
+            </div>
           </div>
           <div class="mm-requests-list" data-requests-list></div>
         </div>
@@ -660,6 +682,24 @@ export class Panel {
       this.cancelEdit();
     });
 
+    // Search input for rules
+    const rulesSearchInput = this.shadowRoot.querySelector('[data-search="rules"]') as HTMLInputElement;
+    if (rulesSearchInput) {
+      rulesSearchInput.addEventListener('input', (e) => {
+        this.rulesSearchQuery = (e.currentTarget as HTMLInputElement).value;
+        this.updateRules(this.currentRules);
+      });
+    }
+
+    // Search input for network requests
+    const requestsSearchInput = this.shadowRoot.querySelector('[data-search="requests"]') as HTMLInputElement;
+    if (requestsSearchInput) {
+      requestsSearchInput.addEventListener('input', (e) => {
+        this.requestsSearchQuery = (e.currentTarget as HTMLInputElement).value;
+        this.updateNetworkRequests(this.networkRequests);
+      });
+    }
+
     // Prevent wheel event propagation from panel to main page
     const panel = this.shadowRoot.querySelector('.mm-panel');
     if (panel) {
@@ -761,6 +801,13 @@ export class Panel {
     // Update network page
     const clearRequestsBtn = this.shadowRoot.querySelector('[data-action="clear-requests"]') as HTMLElement;
     if (clearRequestsBtn) clearRequestsBtn.textContent = this.i18n.t('network.clear');
+
+    // Update search input placeholders
+    const rulesSearchInput = this.shadowRoot.querySelector('[data-search="rules"]') as HTMLInputElement;
+    if (rulesSearchInput) rulesSearchInput.placeholder = this.i18n.t('rules.searchPlaceholder');
+
+    const requestsSearchInput = this.shadowRoot.querySelector('[data-search="requests"]') as HTMLInputElement;
+    if (requestsSearchInput) requestsSearchInput.placeholder = this.i18n.t('network.searchPlaceholder');
 
     // Refresh rules list and network requests to update their content
     this.updateRules(this.currentRules);
@@ -886,13 +933,22 @@ export class Panel {
     if (!this.shadowRoot) return;
 
     const listContainer = this.shadowRoot.querySelector('[data-rules-list]');
-    const countEl = this.shadowRoot.querySelector('.mm-rules-count');
+    const countEl = this.shadowRoot.querySelector('[data-content="rules"] .mm-count');
     if (!listContainer) return;
 
+    // Filter rules based on search query
+    const filteredRules = this.filterRules(rules, this.rulesSearchQuery);
+
     if (countEl) {
-      countEl.textContent = `${rules.length} ${this.i18n.t('rules.count')}`;
+      // Show total count and filtered count if searching
+      if (this.rulesSearchQuery) {
+        countEl.textContent = `${filteredRules.length}/${rules.length} ${this.i18n.t('rules.count')}`;
+      } else {
+        countEl.textContent = `${rules.length} ${this.i18n.t('rules.count')}`;
+      }
     }
 
+    // Show empty state based on whether we have rules and if search has results
     if (rules.length === 0) {
       listContainer.innerHTML = `
         <div class="mm-empty">
@@ -907,7 +963,16 @@ export class Panel {
       return;
     }
 
-    listContainer.innerHTML = rules
+    if (filteredRules.length === 0) {
+      listContainer.innerHTML = `
+        <div class="mm-empty">
+          <p>${this.i18n.t('rules.noResults')}</p>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = filteredRules
       .map(
         (rule) => `
       <div class="mm-rule-item ${rule.enabled ? '' : 'mm-rule-item--disabled'}">
@@ -970,11 +1035,19 @@ export class Panel {
     if (!this.shadowRoot) return;
 
     const listContainer = this.shadowRoot.querySelector('[data-requests-list]');
-    const countEl = this.shadowRoot.querySelector('[data-content="requests"] .mm-rules-count');
+    const countEl = this.shadowRoot.querySelector('[data-content="requests"] .mm-count');
     if (!listContainer) return;
 
+    // Filter requests based on search query
+    const filteredRequests = this.filterRequests(requests, this.requestsSearchQuery);
+
     if (countEl) {
-      countEl.textContent = `${requests.length} ${this.i18n.t('network.count')}`;
+      // Show total count and filtered count if searching
+      if (this.requestsSearchQuery) {
+        countEl.textContent = `${filteredRequests.length}/${requests.length} ${this.i18n.t('network.count')}`;
+      } else {
+        countEl.textContent = `${requests.length} ${this.i18n.t('network.count')}`;
+      }
     }
 
     if (requests.length === 0) {
@@ -987,7 +1060,16 @@ export class Panel {
       return;
     }
 
-    listContainer.innerHTML = requests
+    if (filteredRequests.length === 0) {
+      listContainer.innerHTML = `
+        <div class="mm-empty">
+          <p>${this.i18n.t('network.noResults')}</p>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = filteredRequests
       .map(
         (req) => `
       <div class="mm-request-item ${req.mocked ? 'mm-request-item--mocked' : ''}" data-request-id="${req.id}">
@@ -1023,6 +1105,30 @@ export class Panel {
         if (id) this.handleCreateFromRequest(id);
       });
     });
+  }
+
+  /**
+   * Filter rules by search query (case-insensitive)
+   */
+  private filterRules(rules: RuleItem[], query: string): RuleItem[] {
+    if (!query.trim()) return rules;
+
+    const lowerQuery = query.toLowerCase();
+    return rules.filter(rule =>
+      rule.patternStr.toLowerCase().includes(lowerQuery)
+    );
+  }
+
+  /**
+   * Filter network requests by search query (case-insensitive)
+   */
+  private filterRequests(requests: NetworkRequest[], query: string): NetworkRequest[] {
+    if (!query.trim()) return requests;
+
+    const lowerQuery = query.toLowerCase();
+    return requests.filter(req =>
+      req.url.toLowerCase().includes(lowerQuery)
+    );
   }
 
   /**
@@ -1307,16 +1413,89 @@ export class Panel {
         display: block;
       }
 
-      .mm-rules-header {
+      .mm-toolbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 12px;
         margin-bottom: 16px;
+        flex-wrap: wrap;
       }
 
-      .mm-rules-count {
+      .mm-count {
         font-weight: 500;
         color: #666;
+        white-space: nowrap;
+      }
+
+      .mm-toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: flex-end;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .mm-search-wrapper {
+        position: relative;
+        flex: 1;
+        max-width: 200px;
+        min-width: 120px;
+      }
+
+      .mm-search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .mm-search-input {
+        width: 100%;
+        height: 32px;
+        padding: 6px 10px 6px 36px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: all 0.2s;
+        box-sizing: border-box;
+      }
+
+      .mm-search-input:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      }
+
+      .mm-search-input:focus + .mm-search-icon,
+      .mm-search-wrapper:focus-within .mm-search-icon {
+        color: #4f46e5;
+      }
+
+      .mm-search-input::placeholder {
+        color: #9ca3af;
+      }
+
+      /* Responsive: wrap toolbar on small screens */
+      @media (max-width: 500px) {
+        .mm-toolbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .mm-toolbar-actions {
+          justify-content: stretch;
+          flex-wrap: wrap;
+        }
+
+        .mm-search-wrapper {
+          max-width: none;
+        }
       }
 
       .mm-rules-list {

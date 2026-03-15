@@ -40,6 +40,9 @@ export interface RulesTranslations {
   startConfig: string;
   status: string;
   delay: string;
+  search: string;
+  searchPlaceholder: string;
+  noResults: string;
 }
 
 export interface FormTranslations {
@@ -64,6 +67,9 @@ export interface NetworkTranslations {
   emptyHint: string;
   createMock: string;
   responseData: string;
+  search: string;
+  searchPlaceholder: string;
+  noResults: string;
 }
 
 /**
@@ -94,7 +100,10 @@ const translations: Record<Language, TranslationKey> = {
       empty: '暂无 Mock 规则',
       startConfig: '点击<span class="mm-link" data-action="go-to-add">"添加规则"</span>开始配置',
       status: '状态',
-      delay: '延迟'
+      delay: '延迟',
+      search: '搜索',
+      searchPlaceholder: '搜索 URL 规则...',
+      noResults: '未找到匹配的规则'
     },
     form: {
       urlPattern: 'URL 模式 *',
@@ -116,7 +125,10 @@ const translations: Record<Language, TranslationKey> = {
       empty: '暂无网络请求',
       emptyHint: '发起请求后会在此显示',
       createMock: '创建 Mock 规则',
-      responseData: '响应数据'
+      responseData: '响应数据',
+      search: '搜索',
+      searchPlaceholder: '搜索 URL 请求...',
+      noResults: '未找到匹配的请求'
     }
   },
   en: {
@@ -143,7 +155,10 @@ const translations: Record<Language, TranslationKey> = {
       empty: 'No Mock rules yet',
       startConfig: 'Click <span class="mm-link" data-action="go-to-add">"Add Rule"</span> to start',
       status: 'Status',
-      delay: 'Delay'
+      delay: 'Delay',
+      search: 'Search',
+      searchPlaceholder: 'Search URL rules...',
+      noResults: 'No matching rules found'
     },
     form: {
       urlPattern: 'URL Pattern *',
@@ -165,7 +180,10 @@ const translations: Record<Language, TranslationKey> = {
       empty: 'No network requests yet',
       emptyHint: 'Requests will appear here',
       createMock: 'Create Mock',
-      responseData: 'Response Data'
+      responseData: 'Response Data',
+      search: 'Search',
+      searchPlaceholder: 'Search URL requests...',
+      noResults: 'No matching requests found'
     }
   }
 };
