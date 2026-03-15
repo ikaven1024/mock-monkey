@@ -40,6 +40,10 @@ English · [中文文档](./README.zh-CN.md)
   <video src="https://github.com/user-attachments/assets/05e7731b-b686-4bdc-9c71-835076ae51c4" width="600" controls></video>
 </p>
 
+## Acknowledgments
+
+This project was inspired by [pocket-mocker](https://github.com/tianchangNorth/pocket-mocker).
+
 ## Usage
 
 ### 1. Install Script

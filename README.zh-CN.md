@@ -40,6 +40,10 @@
   <video src="https://github.com/user-attachments/assets/05e7731b-b686-4bdc-9c71-835076ae51c4" width="600" controls></video>
 </p>
 
+## 致谢
+
+本项目受 [pocket-mocker](https://github.com/tianchangNorth/pocket-mocker) 项目启发。
+
 ## 使用方法
 
 ### 1. 安装脚本
