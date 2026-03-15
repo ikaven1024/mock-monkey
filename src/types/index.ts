@@ -113,6 +113,14 @@ export interface CreateMockMethodParams {
 }
 
 /**
+ * Route parameters extracted from URL pattern matching
+ * Example: pattern="/v1/users/:id", url="/v1/users/123" => { id: "123" }
+ */
+export interface RouteParams {
+  [key: string]: string;
+}
+
+/**
  * Method execution context
  */
 export interface MethodContext {
@@ -122,4 +130,6 @@ export interface MethodContext {
   method: string;
   /** Request body */
   body?: string;
+  /** Route parameters extracted from URL pattern matching */
+  params?: RouteParams;
 }

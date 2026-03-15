@@ -141,13 +141,31 @@ class MockMonkey {
   private updateRulesList(): void {
     const rules = this.manager.getAll().map((rule) => ({
       id: rule.id,
-      patternStr: rule.pattern instanceof RegExp ? rule.pattern.toString() : rule.pattern,
+      patternStr: this.patternToString(rule.pattern),
       response: rule.response,
       enabled: rule.enabled,
       delay: rule.options.delay || 0,
       status: rule.options.status || 200
     }));
     this.panel.updateRules(rules);
+  }
+
+  /**
+   * Convert pattern to string for display
+   */
+  private patternToString(pattern: string | RegExp): string {
+    if (pattern instanceof RegExp) {
+      return pattern.toString();
+    }
+    if (typeof pattern === 'string') {
+      return pattern;
+    }
+    // Fallback for unexpected types (e.g., objects)
+    try {
+      return JSON.stringify(pattern);
+    } catch {
+      return String(pattern);
+    }
   }
 
   /**

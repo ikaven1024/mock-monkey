@@ -125,7 +125,6 @@ export class Panel {
 
       <div class="mm-tabs">
         <button class="mm-tab mm-tab--active" data-tab="rules">${this.i18n.t('tabs.rules')}</button>
-        <button class="mm-tab" data-tab="add" data-tab-label>${this.i18n.t('tabs.add')}</button>
         <button class="mm-tab" data-tab="requests">${this.i18n.t('tabs.network')}</button>
         <button class="mm-tab" data-tab="methods">
           ${this.i18n.t('tabs.methods')}
@@ -135,53 +134,57 @@ export class Panel {
 
       <div class="mm-content">
         <div class="mm-tab-content mm-tab-content--active" data-content="rules">
-          <div class="mm-toolbar">
-            <span class="mm-count">0 ${this.i18n.t('rules.count')}</span>
-            <div class="mm-toolbar-actions">
-              <div class="mm-search-wrapper">
-                <svg class="mm-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M14 14L11.1 11.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <input class="mm-search-input" type="text" data-search="rules" placeholder="${this.i18n.t('rules.searchPlaceholder')}">
+          <div class="mm-rules-container">
+            <div class="mm-rules-list-section">
+              <div class="mm-toolbar">
+                <span class="mm-count">0 ${this.i18n.t('rules.count')}</span>
+                <div class="mm-toolbar-actions">
+                  <div class="mm-search-wrapper">
+                    <svg class="mm-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M14 14L11.1 11.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <input class="mm-search-input" type="text" data-search="rules" placeholder="${this.i18n.t('rules.searchPlaceholder')}">
+                  </div>
+                  <button class="mm-btn mm-btn--small" data-action="add-rule">${this.i18n.t('common.add')}</button>
+                  <button class="mm-btn mm-btn--small" data-action="export">${this.i18n.t('rules.export')}</button>
+                  <button class="mm-btn mm-btn--small" data-action="import">${this.i18n.t('rules.import')}</button>
+                </div>
               </div>
-              <button class="mm-btn mm-btn--small" data-action="export">${this.i18n.t('rules.export')}</button>
-              <button class="mm-btn mm-btn--small" data-action="import">${this.i18n.t('rules.import')}</button>
+              <div class="mm-rules-list" data-rules-list></div>
+            </div>
+            <div class="mm-rule-form-section" style="display: none;">
+              <form class="mm-form" data-action="rule-form">
+                <input type="hidden" name="editing-id" value="">
+                <div class="mm-form-group">
+                  <label class="mm-label">${this.i18n.t('form.urlPattern')}</label>
+                  <input class="mm-input" name="pattern" placeholder="/api/user" required>
+                  <span class="mm-hint">${this.i18n.t('form.urlPatternHint')}</span>
+                </div>
+
+                <div class="mm-form-group">
+                  <label class="mm-label">${this.i18n.t('form.responseData')}</label>
+                  <textarea class="mm-textarea" name="response" rows="6" placeholder='${this.i18n.t('form.responseDataPlaceholder')}' required></textarea>
+                </div>
+
+                <div class="mm-form-row">
+                  <div class="mm-form-group">
+                    <label class="mm-label">${this.i18n.t('form.delay')}</label>
+                    <input class="mm-input" type="number" name="delay" value="0" min="0">
+                  </div>
+                  <div class="mm-form-group">
+                    <label class="mm-label">${this.i18n.t('form.status')}</label>
+                    <input class="mm-input" type="number" name="status" value="200" min="100" max="599">
+                  </div>
+                </div>
+
+                <div class="mm-form-actions">
+                  <button type="button" class="mm-btn" data-action="cancel-rule">${this.i18n.t('methods.cancel')}</button>
+                  <button type="submit" class="mm-btn mm-btn--primary" data-submit-rule-btn>${this.i18n.t('methods.save')}</button>
+                </div>
+              </form>
             </div>
           </div>
-          <div class="mm-rules-list" data-rules-list></div>
-        </div>
-
-        <div class="mm-tab-content" data-content="add">
-          <form class="mm-form" data-action="add-rule">
-            <input type="hidden" name="editing-id" value="">
-            <div class="mm-form-group">
-              <label class="mm-label">${this.i18n.t('form.urlPattern')}</label>
-              <input class="mm-input" name="pattern" placeholder="/api/user" required>
-              <span class="mm-hint">${this.i18n.t('form.urlPatternHint')}</span>
-            </div>
-
-            <div class="mm-form-group">
-              <label class="mm-label">${this.i18n.t('form.responseData')}</label>
-              <textarea class="mm-textarea" name="response" rows="6" placeholder='${this.i18n.t('form.responseDataPlaceholder')}' required></textarea>
-            </div>
-
-            <div class="mm-form-row">
-              <div class="mm-form-group">
-                <label class="mm-label">${this.i18n.t('form.delay')}</label>
-                <input class="mm-input" type="number" name="delay" value="0" min="0">
-              </div>
-              <div class="mm-form-group">
-                <label class="mm-label">${this.i18n.t('form.status')}</label>
-                <input class="mm-input" type="number" name="status" value="200" min="100" max="599">
-              </div>
-            </div>
-
-            <div class="mm-form-actions">
-              <button type="button" class="mm-btn" data-action="cancel-edit" style="display: none;">${this.i18n.t('form.cancelEdit')}</button>
-              <button type="submit" class="mm-btn mm-btn--primary" data-submit-btn>${this.i18n.t('form.addRule')}</button>
-            </div>
-          </form>
         </div>
 
         <div class="mm-tab-content" data-content="requests">
@@ -729,15 +732,20 @@ export class Panel {
       this.handleImportFile(e);
     });
 
-    // Add rule form
-    this.shadowRoot.querySelector('[data-action="add-rule"]')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      this.handleAddRule(e);
+    // Add rule button
+    this.shadowRoot.querySelector('[data-action="add-rule"]')?.addEventListener('click', () => {
+      this.showRuleForm();
     });
 
-    // Cancel edit button
-    this.shadowRoot.querySelector('[data-action="cancel-edit"]')?.addEventListener('click', () => {
-      this.cancelEdit();
+    // Rule form submit
+    this.shadowRoot.querySelector('[data-action="rule-form"]')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.handleRuleSubmit(e);
+    });
+
+    // Cancel rule button
+    this.shadowRoot.querySelector('[data-action="cancel-rule"]')?.addEventListener('click', () => {
+      this.hideRuleForm();
     });
 
     // Search input for rules
@@ -833,9 +841,6 @@ export class Panel {
       const tabName = (tab as HTMLElement).dataset.tab;
       if (tabName === 'rules') {
         tab.textContent = this.i18n.t('tabs.rules');
-      } else if (tabName === 'add') {
-        const isEditing = this.editingRuleId !== null;
-        (tab as HTMLElement).textContent = isEditing ? this.i18n.t('common.edit') : this.i18n.t('tabs.add');
       } else if (tabName === 'requests') {
         tab.textContent = this.i18n.t('tabs.network');
       } else if (tabName === 'methods') {
@@ -844,31 +849,52 @@ export class Panel {
       }
     });
 
-    // Update form labels and buttons
-    const urlPatternLabel = this.shadowRoot.querySelector('.mm-form-group:first-child .mm-label') as HTMLElement;
-    if (urlPatternLabel) urlPatternLabel.textContent = this.i18n.t('form.urlPattern');
+    // Update rule form labels and buttons
+    const ruleForm = this.shadowRoot.querySelector('[data-action="rule-form"]') as HTMLFormElement;
+    if (ruleForm) {
+      const formGroups = ruleForm.querySelectorAll('.mm-form-group');
 
-    const urlPatternHint = this.shadowRoot.querySelector('.mm-form-group:first-child .mm-hint') as HTMLElement;
-    if (urlPatternHint) urlPatternHint.textContent = this.i18n.t('form.urlPatternHint');
+      // URL Pattern label
+      if (formGroups[0]) {
+        const urlPatternLabel = formGroups[0].querySelector('.mm-label') as HTMLElement;
+        if (urlPatternLabel) urlPatternLabel.textContent = this.i18n.t('form.urlPattern');
+        const urlPatternHint = formGroups[0].querySelector('.mm-hint') as HTMLElement;
+        if (urlPatternHint) urlPatternHint.textContent = this.i18n.t('form.urlPatternHint');
+      }
 
-    const responseLabel = this.shadowRoot.querySelector('.mm-form-group:nth-child(2) .mm-label') as HTMLElement;
-    if (responseLabel) responseLabel.textContent = this.i18n.t('form.responseData');
+      // Response Data label
+      if (formGroups[1]) {
+        const responseLabel = formGroups[1].querySelector('.mm-label') as HTMLElement;
+        if (responseLabel) responseLabel.textContent = this.i18n.t('form.responseData');
+      }
 
-    const delayLabel = this.shadowRoot.querySelector('.mm-form-row .mm-form-group:first-child .mm-label') as HTMLElement;
-    if (delayLabel) delayLabel.textContent = this.i18n.t('form.delay');
+      // Delay and Status labels (in form-row)
+      const formRow = ruleForm.querySelector('.mm-form-row');
+      if (formRow) {
+        const rowGroups = formRow.querySelectorAll('.mm-form-group');
+        if (rowGroups[0]) {
+          const delayLabel = rowGroups[0].querySelector('.mm-label') as HTMLElement;
+          if (delayLabel) delayLabel.textContent = this.i18n.t('form.delay');
+        }
+        if (rowGroups[1]) {
+          const statusLabel = rowGroups[1].querySelector('.mm-label') as HTMLElement;
+          if (statusLabel) statusLabel.textContent = this.i18n.t('form.status');
+        }
+      }
+    }
 
-    const statusLabel = this.shadowRoot.querySelector('.mm-form-row .mm-form-group:last-child .mm-label') as HTMLElement;
-    if (statusLabel) statusLabel.textContent = this.i18n.t('form.status');
+    const cancelBtn = this.shadowRoot.querySelector('[data-action="cancel-rule"]') as HTMLElement;
+    if (cancelBtn) cancelBtn.textContent = this.i18n.t('methods.cancel');
 
-    const cancelBtn = this.shadowRoot.querySelector('[data-action="cancel-edit"]') as HTMLElement;
-    if (cancelBtn) cancelBtn.textContent = this.i18n.t('form.cancelEdit');
-
-    const submitBtn = this.shadowRoot.querySelector('[data-submit-btn]') as HTMLElement;
+    const submitBtn = this.shadowRoot.querySelector('[data-submit-rule-btn]') as HTMLElement;
     if (submitBtn) {
       submitBtn.textContent = this.editingRuleId ? this.i18n.t('form.saveRule') : this.i18n.t('form.addRule');
     }
 
     // Update rules page
+    const addRuleBtn = this.shadowRoot.querySelector('[data-action="add-rule"]') as HTMLElement;
+    if (addRuleBtn) addRuleBtn.textContent = this.i18n.t('common.add');
+
     const exportBtn = this.shadowRoot.querySelector('[data-action="export"]') as HTMLElement;
     if (exportBtn) exportBtn.textContent = this.i18n.t('rules.export');
 
@@ -946,9 +972,9 @@ export class Panel {
   }
 
   /**
-   * Handle add rule
+   * Handle rule form submit
    */
-  private handleAddRule(e: Event): void {
+  private handleRuleSubmit(e: Event): void {
     const form = e.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
 
@@ -995,63 +1021,80 @@ export class Panel {
       this.onAddRule(ruleData);
     }
 
-    this.cancelEdit();
+    this.hideRuleForm();
     form.reset();
-    this.switchTab('rules');
   }
 
   /**
-   * Cancel edit mode
+   * Show rule form
    */
-  private cancelEdit(): void {
-    this.editingRuleId = null;
+  private showRuleForm(rule?: RuleItem): void {
     if (!this.shadowRoot) return;
 
-    const form = this.shadowRoot.querySelector('[data-action="add-rule"]') as HTMLFormElement;
-    const submitBtn = this.shadowRoot.querySelector('[data-submit-btn]') as HTMLElement;
-    const cancelBtn = this.shadowRoot.querySelector('[data-action="cancel-edit"]') as HTMLElement;
-    const tabLabel = this.shadowRoot.querySelector('[data-tab-label]') as HTMLElement;
-    const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
+    const listSection = this.shadowRoot.querySelector('.mm-rules-list-section') as HTMLElement;
+    const formSection = this.shadowRoot.querySelector('.mm-rule-form-section') as HTMLElement;
+    const submitBtn = this.shadowRoot.querySelector('[data-submit-rule-btn]') as HTMLElement;
 
+    if (listSection) listSection.style.display = 'none';
+    if (formSection) formSection.style.display = 'block';
+
+    if (rule) {
+      this.editingRuleId = rule.id;
+      if (submitBtn) submitBtn.textContent = this.i18n.t('form.saveRule');
+
+      // Fill form
+      const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
+      const responseInput = this.shadowRoot.querySelector('[name="response"]') as HTMLTextAreaElement;
+      const delayInput = this.shadowRoot.querySelector('[name="delay"]') as HTMLInputElement;
+      const statusInput = this.shadowRoot.querySelector('[name="status"]') as HTMLInputElement;
+      const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
+
+      if (patternInput) patternInput.value = rule.patternStr;
+      if (responseInput) responseInput.value = JSON.stringify(rule.response, null, 2);
+      if (delayInput) delayInput.value = rule.delay.toString();
+      if (statusInput) statusInput.value = rule.status.toString();
+      if (editingIdInput) editingIdInput.value = rule.id;
+    } else {
+      // Add new rule
+      this.editingRuleId = null;
+      if (submitBtn) submitBtn.textContent = this.i18n.t('form.addRule');
+
+      const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
+      const responseInput = this.shadowRoot.querySelector('[name="response"]') as HTMLTextAreaElement;
+      const delayInput = this.shadowRoot.querySelector('[name="delay"]') as HTMLInputElement;
+      const statusInput = this.shadowRoot.querySelector('[name="status"]') as HTMLInputElement;
+      const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
+
+      if (patternInput) patternInput.value = '';
+      if (responseInput) responseInput.value = '';
+      if (delayInput) delayInput.value = '0';
+      if (statusInput) statusInput.value = '200';
+      if (editingIdInput) editingIdInput.value = '';
+    }
+  }
+
+  /**
+   * Hide rule form
+   */
+  private hideRuleForm(): void {
+    if (!this.shadowRoot) return;
+
+    const listSection = this.shadowRoot.querySelector('.mm-rules-list-section') as HTMLElement;
+    const formSection = this.shadowRoot.querySelector('.mm-rule-form-section') as HTMLElement;
+    const form = this.shadowRoot.querySelector('[data-action="rule-form"]') as HTMLFormElement;
+
+    if (listSection) listSection.style.display = 'block';
+    if (formSection) formSection.style.display = 'none';
     if (form) form.reset();
-    if (submitBtn) submitBtn.textContent = this.i18n.t('form.addRule');
-    if (cancelBtn) cancelBtn.style.display = 'none';
-    if (tabLabel) tabLabel.textContent = this.i18n.t('tabs.add');
-    if (editingIdInput) editingIdInput.value = '';
+
+    this.editingRuleId = null;
   }
 
   /**
    * Enter edit mode
    */
   private enterEditMode(rule: RuleItem): void {
-    this.editingRuleId = rule.id;
-    if (!this.shadowRoot) return;
-
-    const form = this.shadowRoot.querySelector('[data-action="add-rule"]') as HTMLFormElement;
-    const submitBtn = this.shadowRoot.querySelector('[data-submit-btn]') as HTMLElement;
-    const cancelBtn = this.shadowRoot.querySelector('[data-action="cancel-edit"]') as HTMLElement;
-    const tabLabel = this.shadowRoot.querySelector('[data-tab-label]') as HTMLElement;
-    const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
-
-    // Fill form
-    const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
-    const responseInput = this.shadowRoot.querySelector('[name="response"]') as HTMLTextAreaElement;
-    const delayInput = this.shadowRoot.querySelector('[name="delay"]') as HTMLInputElement;
-    const statusInput = this.shadowRoot.querySelector('[name="status"]') as HTMLInputElement;
-
-    if (patternInput) patternInput.value = rule.patternStr;
-    if (responseInput) responseInput.value = JSON.stringify(rule.response, null, 2);
-    if (delayInput) delayInput.value = rule.delay.toString();
-    if (statusInput) statusInput.value = rule.status.toString();
-    if (editingIdInput) editingIdInput.value = rule.id;
-
-    // Update UI state
-    if (submitBtn) submitBtn.textContent = this.i18n.t('form.saveRule');
-    if (cancelBtn) cancelBtn.style.display = '';
-    if (tabLabel) tabLabel.textContent = this.i18n.t('common.edit');
-
-    // Switch to form tab
-    this.switchTab('add');
+    this.showRuleForm(rule);
   }
 
   /**
@@ -1085,11 +1128,12 @@ export class Panel {
         <div class="mm-empty">
           <p>${this.i18n.t('rules.empty')}</p>
           <p class="mm-hint">${this.i18n.t('rules.startConfig')}</p>
+          <button class="mm-btn mm-btn--small mm-btn--primary" data-action="go-to-add">${this.i18n.t('common.add')}</button>
         </div>
       `;
       // Bind navigation event
       listContainer.querySelector('[data-action="go-to-add"]')?.addEventListener('click', () => {
-        this.switchTab('add');
+        this.showRuleForm();
       });
       return;
     }
@@ -1512,14 +1556,21 @@ export class Panel {
       this.onCreateFromRequest(request);
     }
 
-    // Fill form
+    // Switch to rules tab first
+    this.switchTab('rules');
+
+    // Show form and pre-fill with request data
+    this.showRuleForm();
+
+    // Fill form with request data
     if (!this.shadowRoot) return;
     const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
     const responseInput = this.shadowRoot.querySelector('[name="response"]') as HTMLTextAreaElement;
     const statusInput = this.shadowRoot.querySelector('[name="status"]') as HTMLInputElement;
 
     if (patternInput) {
-      patternInput.value = request.url;
+      // Convert full URL to route parameter pattern
+      patternInput.value = this.urlToRoutePattern(request.url);
     }
     if (responseInput && request.response !== undefined) {
       responseInput.value = JSON.stringify(request.response, null, 2);
@@ -1527,9 +1578,6 @@ export class Panel {
     if (statusInput && request.status) {
       statusInput.value = request.status.toString();
     }
-
-    // Switch to add rule tab
-    this.switchTab('add');
   }
 
   /**
@@ -1546,6 +1594,43 @@ export class Panel {
    */
   private escapeHtmlAttr(text: string): string {
     return this.escapeHtml(text).replace(/"/g, '&quot;');
+  }
+
+  /**
+   * Convert full URL to route parameter pattern
+   * Example: https://example.com/api/users/123 → /api/users/:id
+   *          https://example.com/v1/users/123/posts/456 → /v1/users/:userId/posts/:postId
+   */
+  private urlToRoutePattern(url: string): string {
+    try {
+      const urlObj = new URL(url);
+      const path = urlObj.pathname;
+
+      // Split path into segments
+      const segments = path.split('/').filter(s => s.length > 0);
+
+      // Convert numeric segments to :param
+      const convertedSegments = segments.map(segment => {
+        // Check if segment is numeric (ID-like)
+        if (/^\d+$/.test(segment)) {
+          return ':id';
+        }
+        // Check if segment is a UUID-like string
+        if (/^[0-9a-f-]{36}$/i.test(segment) || /^[0-9a-f]{24}$/i.test(segment)) {
+          return ':id';
+        }
+        // Check if segment looks like a hash (alphanumeric with possible special chars)
+        if (/^[a-zA-Z0-9_-]{8,}$/.test(segment)) {
+          return ':id';
+        }
+        return segment;
+      });
+
+      return '/' + convertedSegments.join('/');
+    } catch {
+      // If URL parsing fails, return original
+      return url;
+    }
   }
 
   /**
@@ -2234,6 +2319,24 @@ export class Panel {
 
       .mm-hidden {
         display: none;
+      }
+
+      /* Rules container styles */
+      .mm-rules-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .mm-rules-list-section {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .mm-rule-form-section {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 16px;
       }
 
       /* Methods styles */

@@ -240,6 +240,80 @@ describe('MockManager', () => {
     });
   });
 
+  describe('findMatchWithParams', () => {
+    it('应该返回匹配的规则和空参数（字符串模式）', () => {
+      manager.add({
+        pattern: '/api/user',
+        response: { matched: true },
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/api/user');
+      expect(result).toBeDefined();
+      expect(result?.rule.response).toEqual({ matched: true });
+      expect(result?.params).toEqual({});
+    });
+
+    it('应该返回匹配的规则和空参数（正则表达式模式）', () => {
+      manager.add({
+        pattern: /\/api\/users\/\d+/,
+        response: { id: 123 },
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/api/users/456');
+      expect(result).toBeDefined();
+      expect(result?.rule.response).toEqual({ id: 123 });
+      expect(result?.params).toEqual({});
+    });
+
+    it('应该解析单参数路由 /v1/users/:id', () => {
+      manager.add({
+        pattern: '/v1/users/:id',
+        response: { user: 'matched' },
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/v1/users/123');
+      expect(result).toBeDefined();
+      expect(result?.params).toEqual({ id: '123' });
+    });
+
+    it('应该解析多参数路由 /v1/users/:userId/posts/:postId', () => {
+      manager.add({
+        pattern: '/v1/users/:userId/posts/:postId',
+        response: { post: 'matched' },
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/v1/users/123/posts/456');
+      expect(result).toBeDefined();
+      expect(result?.params).toEqual({ userId: '123', postId: '456' });
+    });
+
+    it('应该解析带查询字符串的路由参数', () => {
+      manager.add({
+        pattern: '/api/items/:itemId',
+        response: { item: 'matched' },
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/api/items/abc123?query=test');
+      expect(result).toBeDefined();
+      expect(result?.params).toEqual({ itemId: 'abc123' });
+    });
+
+    it('不应该匹配不完整的路由参数', () => {
+      manager.add({
+        pattern: '/v1/users/:id/posts/:postId',
+        response: {},
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/v1/users/123/posts');
+      expect(result).toBeNull();
+    });
+
+    it('没有匹配时应返回 null', () => {
+      const result = manager.findMatchWithParams('https://example.com/api/not-found');
+      expect(result).toBeNull();
+    });
+  });
+
   describe('findMatch', () => {
     it('应该能匹配字符串模式', () => {
       manager.add({
@@ -293,6 +367,71 @@ describe('MockManager', () => {
     it('没有匹配时应返回 null', () => {
       const match = manager.findMatch('https://example.com/api/not-found');
       expect(match).toBeNull();
+    });
+
+    describe('路由参数匹配', () => {
+      it('应该匹配单参数路由 /v1/users/:id', () => {
+        manager.add({
+          pattern: '/v1/users/:id',
+          response: { user: 'matched' },
+        });
+
+        const match = manager.findMatch('https://example.com/v1/users/123');
+        expect(match).toBeDefined();
+        expect(match?.response).toEqual({ user: 'matched' });
+      });
+
+      it('应该匹配多参数路由 /v1/users/:userId/posts/:postId', () => {
+        manager.add({
+          pattern: '/v1/users/:userId/posts/:postId',
+          response: { post: 'matched' },
+        });
+
+        const match = manager.findMatch('https://example.com/v1/users/123/posts/456');
+        expect(match).toBeDefined();
+        expect(match?.response).toEqual({ post: 'matched' });
+      });
+
+      it('不应该匹配不完整的路由参数', () => {
+        manager.add({
+          pattern: '/v1/users/:id/posts/:postId',
+          response: {},
+        });
+
+        // 缺少第二个参数
+        const match = manager.findMatch('https://example.com/v1/users/123/posts');
+        expect(match).toBeNull();
+      });
+
+      it('应该匹配带查询字符串的路由参数', () => {
+        manager.add({
+          pattern: '/api/items/:itemId',
+          response: { item: 'matched' },
+        });
+
+        const match = manager.findMatch('https://example.com/api/items/abc123?query=test');
+        expect(match).toBeDefined();
+      });
+
+      it('应该正确转义路由中的特殊字符', () => {
+        manager.add({
+          pattern: '/api.v1/users/:id',
+          response: { user: 'matched' },
+        });
+
+        const match = manager.findMatch('https://example.com/api.v1/users/123');
+        expect(match).toBeDefined();
+      });
+
+      it('应该匹配路由参数与普通字符串混合的模式', () => {
+        manager.add({
+          pattern: '/api/users/:id/profile',
+          response: { profile: 'matched' },
+        });
+
+        const match = manager.findMatch('https://example.com/api/users/123/profile');
+        expect(match).toBeDefined();
+      });
     });
   });
 

@@ -92,9 +92,10 @@ export class Interceptor {
         timestamp: requestTime
       });
 
-      const rule = self.manager.findMatch(url);
-      if (rule) {
+      const matchResult = self.manager.findMatchWithParams(url);
+      if (matchResult) {
         console.log(`[MockMonkey] XHR 拦截: ${method} ${url}`);
+        const { rule, params } = matchResult;
         // Update record as mocked
         self.recorder.updateRequest(requestId, {
           mocked: true,
@@ -103,7 +104,7 @@ export class Interceptor {
           response: rule.response,
           duration: (rule.options.delay || 0)
         });
-        self.mockXHR(this, rule, requestId);
+        self.mockXHR(this, rule, requestId, params);
         return;
       }
 
@@ -169,10 +170,11 @@ export class Interceptor {
         timestamp: requestTime
       });
 
-      const rule = self.manager.findMatch(url);
+      const matchResult = self.manager.findMatchWithParams(url);
 
-      if (rule) {
+      if (matchResult) {
         console.log(`[MockMonkey] Fetch 拦截: ${method} ${url}`);
+        const { rule, params } = matchResult;
         // Update record as mocked
         self.recorder.updateRequest(requestId, {
           mocked: true,
@@ -181,7 +183,7 @@ export class Interceptor {
           response: rule.response,
           duration: (rule.options.delay || 0)
         });
-        return self.mockFetch(rule, requestId);
+        return self.mockFetch(rule, requestId, params);
       }
 
       // For non-mocked requests, record response
@@ -212,7 +214,7 @@ export class Interceptor {
   /**
    * Mock XHR response
    */
-  private mockXHR(xhr: XMLHttpRequest, rule: MockRule, requestId: string): void {
+  private mockXHR(xhr: XMLHttpRequest, rule: MockRule, requestId: string, params: Record<string, string> = {}): void {
     const delay = rule.options.delay || 0;
     const requestTime = Date.now();
 
@@ -220,7 +222,7 @@ export class Interceptor {
       const duration = Date.now() - requestTime;
 
       // Get request context for custom methods
-      const context = this.getRequestContext(xhr);
+      const context = this.getRequestContext(xhr, params);
 
       // Process mock response
       let mockResponse = this.processMockResponse(rule.response, context);
@@ -266,7 +268,7 @@ export class Interceptor {
   /**
    * Mock Fetch response
    */
-  private mockFetch(rule: MockRule, requestId: string): Promise<Response> {
+  private mockFetch(rule: MockRule, requestId: string, params: Record<string, string> = {}): Promise<Response> {
     return new Promise((resolve) => {
       const delay = rule.options.delay || 0;
       const requestTime = Date.now();
@@ -280,8 +282,9 @@ export class Interceptor {
         const context: MethodContext = request ? {
           url: request.url,
           method: request.method,
-          body: request.body
-        } : { url: '', method: 'GET' };
+          body: request.body,
+          params
+        } : { url: '', method: 'GET', params };
 
         // Process mock response
         let mockResponse = this.processMockResponse(rule.response, context);
@@ -302,12 +305,13 @@ export class Interceptor {
   /**
    * Get request context from XHR object
    */
-  private getRequestContext(xhr: XMLHttpRequest): MethodContext {
+  private getRequestContext(xhr: XMLHttpRequest, params: Record<string, string> = {}): MethodContext {
     const xhrObj = xhr as unknown as Record<string, unknown>;
     return {
       url: xhrObj._mockUrl as string || '',
       method: xhrObj._mockMethod as string || 'GET',
-      body: xhrObj._mockBody as string | undefined
+      body: xhrObj._mockBody as string | undefined,
+      params
     };
   }
 
@@ -337,7 +341,61 @@ export class Interceptor {
     // Then, apply custom methods (@functionName pattern)
     processed = this.processCustomMethods(processed, context);
 
+    // Finally, replace @params.xxx placeholders
+    processed = this.processParams(processed, context);
+
     return processed;
+  }
+
+  /**
+   * Process @params.xxx placeholders in response data
+   * Replaces @params.id, @params.userId, @{params.id}, @{params.id}xxx, etc. with actual route parameter values
+   */
+  private processParams(data: unknown, context: MethodContext): unknown {
+    if (data === null || data === undefined) {
+      return data;
+    }
+
+    // If string, replace @params.xxx patterns
+    if (typeof data === 'string') {
+      // First, replace @{params.xxx} pattern (with curly braces, supports trailing text)
+      // Example: @{params.id} or @{params.id}_suffix
+      let result = data.replace(/@\{params\.([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, paramName) => {
+        if (context.params && paramName in context.params) {
+          return context.params[paramName];
+        }
+        // If param not found, keep original placeholder
+        return match;
+      });
+
+      // Then, replace @params.xxx pattern (without curly braces, simpler form)
+      // Example: @params.id (only if not already matched by the pattern above)
+      result = result.replace(/@params\.([a-zA-Z_][a-zA-Z0-9_]*)/g, (match, paramName) => {
+        if (context.params && paramName in context.params) {
+          return context.params[paramName];
+        }
+        // If param not found, keep original placeholder
+        return match;
+      });
+
+      return result;
+    }
+
+    // If array, process each element
+    if (Array.isArray(data)) {
+      return data.map(item => this.processParams(item, context));
+    }
+
+    // If object, process each value
+    if (typeof data === 'object') {
+      const result: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+        result[key] = this.processParams(value, context);
+      }
+      return result;
+    }
+
+    return data;
   }
 
   /**
