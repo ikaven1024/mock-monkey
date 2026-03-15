@@ -31,6 +31,10 @@
 - 🎭 **Mock.js 集成** - 内置 `@name`、`@email` 等占位符生成随机数据
 - 🔌 **网络监控** - 实时请求日志，一键从请求创建 Mock 规则
 - 📥📤 **导入导出** - 批量备份和恢复规则
+- 🔍 **搜索功能** - 快速筛选规则和网络请求
+- 🌐 **多语言** - 界面支持中英文切换
+- ⚡ **路由参数** - 使用 `@params.xxx` 提取 URL 参数
+- 🛠️ **自定义方法** - JavaScript 函数生成动态响应（Alpha）
 
 ## 演示视频
 
@@ -94,8 +98,71 @@ npm run build
 - 查看请求方法、URL、状态码、耗时
 - 点击请求可快速创建 Mock 规则
 - 清空请求记录
+- 搜索过滤 URL
 
-### 3. 控制台 API（可选）
+**🛠️ 方法标签页（Alpha）**
+- 创建自定义 JavaScript 函数生成动态响应
+- 访问请求上下文（URL、方法、请求体、参数）
+- 启用/禁用自定义方法
+- **注意**：Alpha 功能，API 可能会变更
+
+**语言切换**
+- 点击顶部语言按钮（EN/中）切换界面语言
+- 语言偏好自动保存到 localStorage
+
+### 3. 路由参数匹配
+
+MockMonkey 支持从 URL 中提取路由参数并在响应数据中使用：
+
+```javascript
+// 规则模式: /api/users/@params.id
+// 请求 URL: /api/users/123
+// 响应数据中的 @params.id 会被替换为 "123"
+
+mockMonkey.add('/api/users/@params.id', {
+  userId: '@params.id',
+  message: 'User @{params.id} loaded successfully'
+});
+
+// 示例：GET /api/users/456 返回：
+// { "userId": "456", "message": "User 456 loaded successfully" }
+```
+
+支持两种语法格式：
+- `@params.xxx` - 简单占位符
+- `@{params.xxx}` - 支持后缀文本，如 `@{params.id}_suffix`
+
+### 4. 自定义 Mock 方法（Alpha）
+
+你可以定义自定义 JavaScript 函数来实现更复杂的 Mock 逻辑：
+
+```javascript
+// 通过控制台 API 添加
+mockMonkey.addMethod('getCurrentUser', 'return { id: 1, name: "Admin" };');
+
+// 在响应数据中使用
+mockMonkey.add('/api/user', {
+  user: '@getCurrentUser'
+});
+
+// 在自定义方法中访问请求上下文
+mockMonkey.addMethod('userById', `
+  const id = context.params.id;
+  return { id: parseInt(id), name: 'User ' + id };
+`);
+
+mockMonkey.add('/api/users/@params.id', {
+  data: '@userById'
+});
+```
+
+**可用的上下文变量：**
+- `context.url` - 请求 URL
+- `context.method` - 请求方法（GET、POST 等）
+- `context.body` - 请求体
+- `context.params` - 提取的路由参数
+
+### 5. 控制台 API（可选）
 
 也可以在浏览器控制台（F12）中使用 API：
 
@@ -105,6 +172,12 @@ mockMonkey.add('/api/user', {
     code: 200,
     data: { name: '张三' }
 });
+
+// 添加自定义方法（Alpha）
+mockMonkey.addMethod('methodName', 'return { data: "custom" };');
+
+// 删除自定义方法
+mockMonkey.removeMethod('methodName');
 
 // 使用正则匹配
 mockMonkey.add(/\/api\/posts\/\d+/, {
@@ -246,9 +319,12 @@ MockMonkey/
 │   ├── core/
 │   │   ├── MockManager.ts       # Mock 规则管理器
 │   │   ├── Interceptor.ts       # 请求拦截器
-│   │   └── RequestRecorder.ts   # 网络请求记录器
+│   │   ├── RequestRecorder.ts   # 网络请求记录器
+│   │   └── MethodManager.ts     # 自定义方法管理器
 │   ├── ui/
 │   │   └── Panel.ts             # 可视化管理面板
+│   ├── i18n/
+│   │   └── index.ts             # 国际化
 │   ├── types/
 │   │   └── index.ts             # TypeScript 类型定义
 │   └── index.ts                 # 入口文件

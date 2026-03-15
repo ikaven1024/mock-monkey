@@ -31,6 +31,10 @@ English · [中文文档](./README.zh-CN.md)
 - 🎭 **Mock.js Integration** - Built-in placeholders like `@name`, `@email` for random data
 - 🔌 **Network Monitoring** - Real-time request logging, quickly create rules from requests
 - 📥📤 **Import/Export** - Backup and restore rules in bulk
+- 🔍 **Search Function** - Quickly filter rules and network requests by URL
+- 🌐 **I18n Support** - Interface available in English and Chinese
+- ⚡ **Route Parameters** - Extract URL parameters with `@params.xxx` placeholder
+- 🛠️ **Custom Methods** - Define JavaScript functions for dynamic mock responses (Alpha)
 
 ## Demo
 
@@ -94,8 +98,71 @@ After installing the script, visit any webpage:
 - View request method, URL, status code, duration
 - Click request to quickly create Mock rule
 - Clear request records
+- Search filter for URLs
 
-### 3. Console API (Optional)
+**🛠️ Methods Tab (Alpha)**
+- Create custom JavaScript functions for dynamic responses
+- Access request context (URL, method, body, params)
+- Enable/disable custom methods
+- **Warning**: Alpha feature, APIs may change
+
+**Language Switch**
+- Click language button (EN/中) in header to switch interface language
+- Language preference auto-saves to localStorage
+
+### 3. Route Parameters
+
+MockMonkey supports extracting route parameters from URLs and using them in responses:
+
+```javascript
+// Rule pattern: /api/users/@params.id
+// URL: /api/users/123
+// Response will use "123" for @params.id
+
+mockMonkey.add('/api/users/@params.id', {
+  userId: '@params.id',
+  message: 'User @{params.id} loaded successfully'
+});
+
+// Example: GET /api/users/456 returns:
+// { "userId": "456", "message": "User 456 loaded successfully" }
+```
+
+Two syntax formats are supported:
+- `@params.xxx` - Simple placeholder
+- `@{params.xxx}` - Allows trailing text like `@{params.id}_suffix`
+
+### 4. Custom Mock Methods (Alpha)
+
+You can define custom JavaScript functions for more complex mock logic:
+
+```javascript
+// Via console API
+mockMonkey.addMethod('getCurrentUser', 'return { id: 1, name: "Admin" };');
+
+// Use in response data
+mockMonkey.add('/api/user', {
+  user: '@getCurrentUser'
+});
+
+// Access request context in custom methods
+mockMonkey.addMethod('userById', `
+  const id = context.params.id;
+  return { id: parseInt(id), name: 'User ' + id };
+`);
+
+mockMonkey.add('/api/users/@params.id', {
+  data: '@userById'
+});
+```
+
+**Available context variables:**
+- `context.url` - Request URL
+- `context.method` - Request method (GET, POST, etc.)
+- `context.body` - Request body
+- `context.params` - Extracted route parameters
+
+### 5. Console API (Optional)
 
 You can also use the API in the browser console (F12):
 
@@ -105,6 +172,12 @@ mockMonkey.add('/api/user', {
     code: 200,
     data: { name: 'John Doe' }
 });
+
+// Add custom method (Alpha)
+mockMonkey.addMethod('methodName', 'return { data: "custom" };');
+
+// Remove custom method
+mockMonkey.removeMethod('methodName');
 
 // Use regex matching
 mockMonkey.add(/\/api\/posts\/\d+/, {
@@ -246,9 +319,12 @@ MockMonkey/
 │   ├── core/
 │   │   ├── MockManager.ts       # Mock rule manager
 │   │   ├── Interceptor.ts       # Request interceptor
-│   │   └── RequestRecorder.ts   # Network request recorder
+│   │   ├── RequestRecorder.ts   # Network request recorder
+│   │   └── MethodManager.ts     # Custom method manager
 │   ├── ui/
 │   │   └── Panel.ts             # Visual management panel
+│   ├── i18n/
+│   │   └── index.ts             # Internationalization
 │   ├── types/
 │   │   └── index.ts             # TypeScript type definitions
 │   └── index.ts                 # Entry point
