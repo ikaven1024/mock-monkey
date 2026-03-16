@@ -118,6 +118,18 @@ export class Panel {
       <div class="mm-header" data-drag-handle="panel">
         <h2 class="mm-title">MockMonkey</h2>
         <div class="mm-header-actions">
+          <button class="mm-icon-btn" data-action="import" title="${this.i18n.t('common.import')}">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 12V4M8 4L5 7M8 4L11 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M13.3333 10.6667V12.6667C13.3333 13.0203 13.1929 13.3594 12.9428 13.6095C12.6928 13.8595 12.3536 14 12 14H4C3.64638 14 3.30724 13.8595 3.05719 13.6095C2.80714 13.3594 2.66667 13.0203 2.66667 12.6667V10.6667" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="mm-icon-btn" data-action="export" title="${this.i18n.t('common.export')}">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 4V12M8 12L11 9M8 12L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M13.3333 5.33333V3.33333C13.3333 2.97971 13.1929 2.64057 12.9428 2.39052C12.6928 2.14048 12.3536 2 12 2H4C3.64638 2 3.30724 2.14048 3.05719 2.39052C2.80714 2.64057 2.66667 2.97971 2.66667 3.33333V5.33333" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <button class="mm-lang-btn" data-action="toggle-lang" title="${this.i18n.getLanguage() === 'zh' ? 'Switch to English' : '切换中文'}">${this.i18n.getLanguage() === 'zh' ? 'EN' : '中'}</button>
           <button class="mm-close-btn" data-action="close">×</button>
         </div>
@@ -147,8 +159,6 @@ export class Panel {
                     <input class="mm-search-input" type="text" data-search="rules" placeholder="${this.i18n.t('rules.searchPlaceholder')}">
                   </div>
                   <button class="mm-btn mm-btn--small" data-action="add-rule">${this.i18n.t('common.add')}</button>
-                  <button class="mm-btn mm-btn--small" data-action="export">${this.i18n.t('rules.export')}</button>
-                  <button class="mm-btn mm-btn--small" data-action="import">${this.i18n.t('rules.import')}</button>
                 </div>
               </div>
               <div class="mm-rules-list" data-rules-list></div>
@@ -575,12 +585,12 @@ export class Panel {
   }
 
   /**
-   * Export rules
+   * Export rules and methods
    */
-  private exportRules(): void {
+  private exportData(): void {
     try {
       // Serialize rules to importable format
-      const exportData = this.currentRules.map((rule) => ({
+      const rulesData = this.currentRules.map((rule) => ({
         pattern: rule.patternStr,
         response: rule.response,
         enabled: rule.enabled,
@@ -588,28 +598,43 @@ export class Panel {
         status: rule.status
       }));
 
+      // Serialize methods to importable format
+      const methodsData = this.currentMethods.map((method) => ({
+        name: method.name,
+        description: method.description,
+        code: method.code,
+        enabled: method.enabled
+      }));
+
+      const exportData = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        rules: rulesData,
+        methods: methodsData
+      };
+
       const blob = new Blob([JSON.stringify(exportData, null, 2)], {
         type: 'application/json'
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `mock-monkey-rules-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `mock-monkey-data-${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      console.log('[MockMonkey] 规则导出成功:', exportData.length, '条');
+      console.log('[MockMonkey] Export successful:', rulesData.length, 'rules,', methodsData.length, 'methods');
     } catch (e) {
-      console.error('[MockMonkey] 导出规则失败:', e);
+      console.error('[MockMonkey] Export failed:', e);
     }
   }
 
   /**
-   * Import rules
+   * Import rules and methods
    */
-  private importRules(): void {
+  private importData(): void {
     const fileInput = this.shadowRoot?.querySelector('[data-action="import-file"]') as HTMLInputElement;
     if (fileInput) {
       // Reset value to ensure selecting same file triggers change event
@@ -630,53 +655,103 @@ export class Panel {
     reader.onload = (event) => {
       try {
         const content = event.target?.result as string;
-        const importedRules = JSON.parse(content) as Array<{
-          pattern: string;
-          response: unknown;
-          enabled?: boolean;
-          delay?: number;
-          status?: number;
-        }>;
+        const importedData = JSON.parse(content);
 
-        if (!Array.isArray(importedRules)) {
+        let rulesSuccessCount = 0;
+        let methodsSuccessCount = 0;
+
+        // Handle legacy format (array of rules)
+        if (Array.isArray(importedData)) {
+          importedData.forEach((ruleData) => {
+            // Parse pattern
+            let parsedPattern: string | RegExp = ruleData.pattern;
+            if (ruleData.pattern.startsWith('/')) {
+              try {
+                const match = ruleData.pattern.match(/^\/(.+)\/([gimuy]*)$/);
+                if (match) {
+                  parsedPattern = new RegExp(match[1], match[2]);
+                }
+              } catch (err) {
+                console.warn('[MockMonkey] Skip invalid rule:', ruleData.pattern);
+                return;
+              }
+            }
+
+            this.onAddRule({
+              pattern: parsedPattern,
+              response: ruleData.response,
+              options: {
+                delay: ruleData.delay ?? 0,
+                status: ruleData.status ?? 200
+              }
+            });
+            rulesSuccessCount++;
+          });
+        } else if (importedData.rules && Array.isArray(importedData.rules)) {
+          // New format with rules and methods
+
+          // Import rules
+          importedData.rules.forEach((ruleData: {
+            pattern: string;
+            response: unknown;
+            enabled?: boolean;
+            delay?: number;
+            status?: number;
+          }) => {
+            // Parse pattern
+            let parsedPattern: string | RegExp = ruleData.pattern;
+            if (ruleData.pattern.startsWith('/')) {
+              try {
+                const match = ruleData.pattern.match(/^\/(.+)\/([gimuy]*)$/);
+                if (match) {
+                  parsedPattern = new RegExp(match[1], match[2]);
+                }
+              } catch (err) {
+                console.warn('[MockMonkey] Skip invalid rule:', ruleData.pattern);
+                return;
+              }
+            }
+
+            this.onAddRule({
+              pattern: parsedPattern,
+              response: ruleData.response,
+              options: {
+                delay: ruleData.delay ?? 0,
+                status: ruleData.status ?? 200
+              }
+            });
+            rulesSuccessCount++;
+          });
+
+          // Import methods
+          if (importedData.methods && Array.isArray(importedData.methods)) {
+            importedData.methods.forEach((methodData: {
+              name: string;
+              description?: string;
+              code: string;
+              enabled?: boolean;
+            }) => {
+              if (this.onAddMethod) {
+                this.onAddMethod({
+                  name: methodData.name,
+                  code: methodData.code,
+                  description: methodData.description
+                });
+                methodsSuccessCount++;
+              }
+            });
+          }
+        } else {
           throw new Error(this.i18n.t('form.importError'));
         }
 
-        // Trigger import callback, let external handler process rule import
-        let successCount = 0;
-        importedRules.forEach((ruleData) => {
-          // Parse pattern
-          let parsedPattern: string | RegExp = ruleData.pattern;
-          if (ruleData.pattern.startsWith('/')) {
-            try {
-              const match = ruleData.pattern.match(/^\/(.+)\/([gimuy]*)$/);
-              if (match) {
-                parsedPattern = new RegExp(match[1], match[2]);
-              }
-            } catch (err) {
-              console.warn('[MockMonkey] 跳过无效规则:', ruleData.pattern);
-              return;
-            }
-          }
-
-          this.onAddRule({
-            pattern: parsedPattern,
-            response: ruleData.response,
-            options: {
-              delay: ruleData.delay ?? 0,
-              status: ruleData.status ?? 200
-            }
-          });
-          successCount++;
-        });
-
-        console.log(`[MockMonkey] 成功导入 ${successCount} 条规则`);
+        console.log(`[MockMonkey] Import successful: ${rulesSuccessCount} rules, ${methodsSuccessCount} methods`);
 
         // Reset input
         input.value = '';
       } catch (e) {
-        console.error('[MockMonkey] 导入规则失败:', e);
-        alert('导入失败：' + (e as Error).message);
+        console.error('[MockMonkey] Import failed:', e);
+        alert('Import failed: ' + (e as Error).message);
       }
     };
     reader.readAsText(file);
@@ -710,20 +785,20 @@ export class Panel {
       this.updateNetworkRequests([]);
     });
 
-    // Export rules
+    // Export data
     this.shadowRoot.querySelector('[data-action="export"]')?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.exportRules();
+      this.exportData();
       // Remove focus to prevent duplicate keyboard events
       (e.currentTarget as HTMLElement).blur();
     });
 
-    // Import rules
+    // Import data
     this.shadowRoot.querySelector('[data-action="import"]')?.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.importRules();
+      this.importData();
       (e.currentTarget as HTMLElement).blur();
     });
 
@@ -895,11 +970,12 @@ export class Panel {
     const addRuleBtn = this.shadowRoot.querySelector('[data-action="add-rule"]') as HTMLElement;
     if (addRuleBtn) addRuleBtn.textContent = this.i18n.t('common.add');
 
+    // Update header import/export buttons (icon buttons use title attribute)
     const exportBtn = this.shadowRoot.querySelector('[data-action="export"]') as HTMLElement;
-    if (exportBtn) exportBtn.textContent = this.i18n.t('rules.export');
+    if (exportBtn) exportBtn.title = this.i18n.t('common.export');
 
     const importBtn = this.shadowRoot.querySelector('[data-action="import"]') as HTMLElement;
-    if (importBtn) importBtn.textContent = this.i18n.t('rules.import');
+    if (importBtn) importBtn.title = this.i18n.t('common.import');
 
     // Update network page
     const clearRequestsBtn = this.shadowRoot.querySelector('[data-action="clear-requests"]') as HTMLElement;
@@ -1743,6 +1819,28 @@ export class Panel {
 
       .mm-close-btn:hover {
         background: #f5f5f5;
+      }
+
+      .mm-icon-btn {
+        background: #f5f5f5;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #374151;
+      }
+
+      .mm-icon-btn:hover {
+        background: #e5e7eb;
+        border-color: #9ca3af;
+      }
+
+      .mm-icon-btn:active {
+        transform: scale(0.95);
       }
 
       .mm-header-actions {

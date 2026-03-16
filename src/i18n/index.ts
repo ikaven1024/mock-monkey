@@ -25,6 +25,8 @@ export interface CommonTranslations {
   save: string;
   details: string;
   confirmDelete: string;
+  export: string;
+  import: string;
 }
 
 export interface TabsTranslations {
@@ -36,8 +38,6 @@ export interface TabsTranslations {
 
 export interface RulesTranslations {
   count: string;
-  export: string;
-  import: string;
   empty: string;
   startConfig: string;
   status: string;
@@ -110,7 +110,9 @@ const translations: Record<Language, TranslationKey> = {
       cancel: '取消',
       save: '保存',
       details: '详情',
-      confirmDelete: '确定要删除这条规则吗？'
+      confirmDelete: '确定要删除这条规则吗？',
+      export: '导出',
+      import: '导入'
     },
     tabs: {
       rules: '规则',
@@ -120,8 +122,6 @@ const translations: Record<Language, TranslationKey> = {
     },
     rules: {
       count: '条规则',
-      export: '导出',
-      import: '导入',
       empty: '暂无 Mock 规则',
       startConfig: '点击<span class="mm-link" data-action="go-to-add">"添加规则"</span>开始配置',
       status: '状态',
@@ -187,7 +187,9 @@ const translations: Record<Language, TranslationKey> = {
       cancel: 'Cancel',
       save: 'Save',
       details: 'Details',
-      confirmDelete: 'Are you sure you want to delete this rule?'
+      confirmDelete: 'Are you sure you want to delete this rule?',
+      export: 'Export',
+      import: 'Import'
     },
     tabs: {
       rules: 'Rules',
@@ -197,8 +199,6 @@ const translations: Record<Language, TranslationKey> = {
     },
     rules: {
       count: 'rules',
-      export: 'Export',
-      import: 'Import',
       empty: 'No Mock rules yet',
       startConfig: 'Click <span class="mm-link" data-action="go-to-add">"Add Rule"</span> to start',
       status: 'Status',
