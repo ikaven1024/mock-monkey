@@ -374,7 +374,7 @@ describe('Interceptor', () => {
     it('应该支持数组中的对象嵌入', () => {
       methodManager.add({
         name: 'getItem',
-        code: 'return { id: context.params?.id || 1, name: "Item" };',
+        code: 'return { id: ctx.params?.id || 1, name: "Item" };',
         description: 'Get item',
       });
 
@@ -553,7 +553,7 @@ describe('Interceptor', () => {
       });
     });
 
-    it('应该支持在方法中使用 context.Mock', () => {
+    it('应该支持在方法中使用 ctx.Mock', () => {
       // Save original mock implementation
       const originalMock = mockMock.mock;
 
@@ -579,7 +579,7 @@ describe('Interceptor', () => {
 
       methodManager.add({
         name: 'getRandomUser',
-        code: 'return context.Mock ? context.Mock.mock({ id: "@id", name: "@name" }) : { id: 1, name: "Default" };',
+        code: 'return ctx.Mock ? ctx.Mock.mock({ id: "@id", name: "@name" }) : { id: 1, name: "Default" };',
         description: 'Get random user using Mock',
       });
 

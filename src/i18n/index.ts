@@ -93,6 +93,8 @@ export interface MethodsTranslations {
   contextUrl: string;
   contextMethod: string;
   contextBody: string;
+  contextParams: string;
+  contextMock: string;
   alphaWarning: string;
 }
 
@@ -171,9 +173,11 @@ const translations: Record<Language, TranslationKey> = {
       codePlaceholder: 'return { users: [...] };',
       deleteConfirm: '确定要删除这个方法吗？',
       contextHelp: '可用变量',
-      contextUrl: 'context.url - 请求 URL',
-      contextMethod: 'context.method - 请求方法',
-      contextBody: 'context.body - 请求体',
+      contextUrl: 'ctx.url - 请求 URL',
+      contextMethod: 'ctx.method - 请求方法',
+      contextBody: 'ctx.body - 请求体',
+      contextParams: 'ctx.params - URL 路径参数 (如 /api/user/@params.id)',
+      contextMock: 'ctx.Mock - Mock.js 工具 (ctx.Mock.mock, ctx.Mock.Random)',
       alphaWarning: 'Alpha 功能：自定义方法正在开发中，API 可能会变更。使用需谨慎，避免在生产环境使用。'
     }
   },
@@ -248,9 +252,11 @@ const translations: Record<Language, TranslationKey> = {
       codePlaceholder: 'return { users: [...] };',
       deleteConfirm: 'Are you sure you want to delete this method?',
       contextHelp: 'Available variables',
-      contextUrl: 'context.url - Request URL',
-      contextMethod: 'context.method - Request method',
-      contextBody: 'context.body - Request body',
+      contextUrl: 'ctx.url - Request URL',
+      contextMethod: 'ctx.method - Request method',
+      contextBody: 'ctx.body - Request body',
+      contextParams: 'ctx.params - URL path params (e.g. /api/user/@params.id)',
+      contextMock: 'ctx.Mock - Mock.js utilities (ctx.Mock.mock, ctx.Mock.Random)',
       alphaWarning: 'Alpha Feature: Custom methods are under development. APIs may change. Use with caution, not recommended for production.'
     }
   }

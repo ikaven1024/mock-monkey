@@ -222,10 +222,10 @@ export class Interceptor {
       const duration = Date.now() - requestTime;
 
       // Get request context for custom methods
-      const context = this.getRequestContext(xhr, params);
+      const ctx = this.getRequestContext(xhr, params);
 
       // Process mock response
-      let mockResponse = this.processMockResponse(rule.response, context);
+      let mockResponse = this.processMockResponse(rule.response, ctx);
 
       Object.defineProperty(xhr, 'readyState', {
         value: 4,
@@ -279,7 +279,7 @@ export class Interceptor {
 
         // Get request context from recorder
         const request = this.recorder.getRequests().find(r => r.id === requestId);
-        const context: MethodContext = request ? {
+        const ctx: MethodContext = request ? {
           url: request.url,
           method: request.method,
           body: request.body,
@@ -291,7 +291,7 @@ export class Interceptor {
         } : { url: '', method: 'GET', params, Mock: undefined };
 
         // Process mock response
-        let mockResponse = this.processMockResponse(rule.response, context);
+        let mockResponse = this.processMockResponse(rule.response, ctx);
 
         // Update actual duration
         this.recorder.updateRequest(requestId, { duration, response: mockResponse });
@@ -326,7 +326,7 @@ export class Interceptor {
   /**
    * Process mock response with Mock.js and custom methods
    */
-  private processMockResponse(response: unknown, context: MethodContext): unknown {
+  private processMockResponse(response: unknown, ctx: MethodContext): unknown {
     let processed = response;
 
     // First, apply Mock.js template parsing
@@ -347,10 +347,10 @@ export class Interceptor {
     }
 
     // Then, apply custom methods (@functionName pattern)
-    processed = this.processCustomMethods(processed, context);
+    processed = this.processCustomMethods(processed, ctx);
 
     // Finally, replace @params.xxx placeholders
-    processed = this.processParams(processed, context);
+    processed = this.processParams(processed, ctx);
 
     return processed;
   }
@@ -359,7 +359,7 @@ export class Interceptor {
    * Process @params.xxx placeholders in response data
    * Replaces @params.id, @params.userId, @{params.id}, @{params.id}xxx, etc. with actual route parameter values
    */
-  private processParams(data: unknown, context: MethodContext): unknown {
+  private processParams(data: unknown, ctx: MethodContext): unknown {
     if (data === null || data === undefined) {
       return data;
     }
@@ -369,8 +369,8 @@ export class Interceptor {
       // First, replace @{params.xxx} pattern (with curly braces, supports trailing text)
       // Example: @{params.id} or @{params.id}_suffix
       let result = data.replace(/@\{params\.([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, paramName) => {
-        if (context.params && paramName in context.params) {
-          return context.params[paramName];
+        if (ctx.params && paramName in ctx.params) {
+          return ctx.params[paramName];
         }
         // If param not found, keep original placeholder
         return match;
@@ -379,8 +379,8 @@ export class Interceptor {
       // Then, replace @params.xxx pattern (without curly braces, simpler form)
       // Example: @params.id (only if not already matched by the pattern above)
       result = result.replace(/@params\.([a-zA-Z_][a-zA-Z0-9_]*)/g, (match, paramName) => {
-        if (context.params && paramName in context.params) {
-          return context.params[paramName];
+        if (ctx.params && paramName in ctx.params) {
+          return ctx.params[paramName];
         }
         // If param not found, keep original placeholder
         return match;
@@ -391,14 +391,14 @@ export class Interceptor {
 
     // If array, process each element
     if (Array.isArray(data)) {
-      return data.map(item => this.processParams(item, context));
+      return data.map(item => this.processParams(item, ctx));
     }
 
     // If object, process each value
     if (typeof data === 'object') {
       const result: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-        result[key] = this.processParams(value, context);
+        result[key] = this.processParams(value, ctx);
       }
       return result;
     }
@@ -412,7 +412,7 @@ export class Interceptor {
    * - @functionName - Simple method reference
    * - @{...functionName} - Object embedding (value) or spreading (key)
    */
-  private processCustomMethods(data: unknown, context: MethodContext): unknown {
+  private processCustomMethods(data: unknown, ctx: MethodContext): unknown {
     if (data === null || data === undefined) {
       return data;
     }
@@ -423,7 +423,7 @@ export class Interceptor {
       const spreadMatch = data.match(/^@\{\.\.\.(\w+)\}$/);
       if (spreadMatch) {
         const methodName = spreadMatch[1];
-        const result = this.methodManager.execute(methodName, context);
+        const result = this.methodManager.execute(methodName, ctx);
         if (result !== null) {
           return result;
         }
@@ -432,7 +432,7 @@ export class Interceptor {
       const simpleMatch = data.match(/^@(\w+)$/);
       if (simpleMatch) {
         const methodName = simpleMatch[1];
-        const result = this.methodManager.execute(methodName, context);
+        const result = this.methodManager.execute(methodName, ctx);
         if (result !== null) {
           return result;
         }
@@ -442,7 +442,7 @@ export class Interceptor {
 
     // If array, process each element
     if (Array.isArray(data)) {
-      return data.map(item => this.processCustomMethods(item, context));
+      return data.map(item => this.processCustomMethods(item, ctx));
     }
 
     // If object, process each value and check for @{...functionName} keys (object spread)
@@ -453,14 +453,14 @@ export class Interceptor {
         const spreadKeyMatch = key.match(/^@\{\.\.\.(\w+)\}$/);
         if (spreadKeyMatch) {
           const methodName = spreadKeyMatch[1];
-          const methodResult = this.methodManager.execute(methodName, context);
+          const methodResult = this.methodManager.execute(methodName, ctx);
           if (methodResult !== null && typeof methodResult === 'object' && !Array.isArray(methodResult)) {
             // Spread the returned object into result
             Object.assign(result, methodResult);
           }
         } else {
           // Recursively process nested values
-          result[key] = this.processCustomMethods(value, context);
+          result[key] = this.processCustomMethods(value, ctx);
         }
       }
       return result;

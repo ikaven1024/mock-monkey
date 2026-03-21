@@ -125,7 +125,7 @@ export class MethodManager {
   /**
    * Execute custom method
    */
-  execute(name: string, context: MethodContext): unknown {
+  execute(name: string, ctx: MethodContext): unknown {
     // Log alpha warning on first use
     MethodManager.logAlphaWarning();
 
@@ -137,8 +137,8 @@ export class MethodManager {
 
     try {
       // Create function from code with context parameter
-      const fn = new Function('context', method.code);
-      const result = fn(context);
+      const fn = new Function('ctx', method.code);
+      const result = fn(ctx);
 
       console.log(`[MockMonkey] Executed method: @${name}`);
       return result;

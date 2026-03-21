@@ -180,7 +180,7 @@ mockMonkey.add('/api/data', {
 
 ```javascript
 mockMonkey.addMethod('userById', `
-  const id = context.params.id;
+  const id = ctx.params.id;
   return { id: parseInt(id), name: 'User ' + id };
 `);
 
@@ -190,20 +190,20 @@ mockMonkey.add('/api/users/@params.id', {
 ```
 
 **可用的上下文变量：**
-- `context.url` - 请求 URL
-- `context.method` - 请求方法（GET、POST 等）
-- `context.body` - 请求体
-- `context.params` - 提取的路由参数
-- `context.Mock` - Mock.js 实例，用于生成随机数据
+- `ctx.url` - 请求 URL
+- `ctx.method` - 请求方法（GET、POST 等）
+- `ctx.body` - 请求体
+- `ctx.params` - 提取的路由参数
+- `ctx.Mock` - Mock.js 实例，用于生成随机数据
 
 **最佳实践：在方法内部使用 Mock.js**
 
-方法返回的对象**不会**再次被处理，因此不能在返回值中使用 Mock.js 占位符或其他方法引用。如需动态数据，请使用 `context.Mock`：
+方法返回的对象**不会**再次被处理，因此不能在返回值中使用 Mock.js 占位符或其他方法引用。如需动态数据，请使用 `ctx.Mock`：
 
 ```javascript
-// ✅ 正确：使用 context.Mock
+// ✅ 正确：使用 ctx.Mock
 mockMonkey.addMethod('getRandomUser', `
-  return context.Mock.mock({
+  return ctx.Mock.mock({
     id: '@natural(1, 1000)',
     name: '@name',
     email: '@email'

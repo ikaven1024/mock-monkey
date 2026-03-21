@@ -244,7 +244,9 @@ export class Panel {
                     <summary class="mm-context-help-title">${this.i18n.t('methods.contextHelp')}</summary>
                     <code class="mm-code">${this.i18n.t('methods.contextUrl')}</code><br>
                     <code class="mm-code">${this.i18n.t('methods.contextMethod')}</code><br>
-                    <code class="mm-code">${this.i18n.t('methods.contextBody')}</code>
+                    <code class="mm-code">${this.i18n.t('methods.contextBody')}</code><br>
+                    <code class="mm-code">${this.i18n.t('methods.contextParams')}</code><br>
+                    <code class="mm-code">${this.i18n.t('methods.contextMock')}</code>
                   </details>
                 </div>
 
@@ -1037,6 +1039,8 @@ export class Panel {
           if (contextCodes[0]) contextCodes[0].textContent = this.i18n.t('methods.contextUrl');
           if (contextCodes[1]) contextCodes[1].textContent = this.i18n.t('methods.contextMethod');
           if (contextCodes[2]) contextCodes[2].textContent = this.i18n.t('methods.contextBody');
+          if (contextCodes[3]) contextCodes[3].textContent = this.i18n.t('methods.contextParams');
+          if (contextCodes[4]) contextCodes[4].textContent = this.i18n.t('methods.contextMock');
         }
       }
     }
@@ -1477,11 +1481,12 @@ export class Panel {
       this.editingMethodId = method.id;
       if (submitBtn) submitBtn.textContent = this.i18n.t('methods.save');
 
-      // Fill form
-      const nameInput = this.shadowRoot.querySelector('[name="name"]') as HTMLInputElement;
-      const descInput = this.shadowRoot.querySelector('[name="description"]') as HTMLInputElement;
-      const codeInput = this.shadowRoot.querySelector('[name="code"]') as HTMLTextAreaElement;
-      const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
+      // Fill form - use specific selectors to avoid conflict with rule form
+      const form = this.shadowRoot.querySelector('[data-action="method-form"]') as HTMLFormElement;
+      const nameInput = form?.querySelector('[name="name"]') as HTMLInputElement;
+      const descInput = form?.querySelector('[name="description"]') as HTMLInputElement;
+      const codeInput = form?.querySelector('[name="code"]') as HTMLTextAreaElement;
+      const editingIdInput = form?.querySelector('[name="editing-id"]') as HTMLInputElement;
 
       if (nameInput) nameInput.value = method.name;
       if (descInput) descInput.value = method.description || '';
@@ -1492,14 +1497,15 @@ export class Panel {
       this.editingMethodId = null;
       if (submitBtn) submitBtn.textContent = this.i18n.t('methods.add');
 
-      const nameInput = this.shadowRoot.querySelector('[name="name"]') as HTMLInputElement;
-      const descInput = this.shadowRoot.querySelector('[name="description"]') as HTMLInputElement;
-      const codeInput = this.shadowRoot.querySelector('[name="code"]') as HTMLTextAreaElement;
-      const editingIdInput = this.shadowRoot.querySelector('[name="editing-id"]') as HTMLInputElement;
+      const form = this.shadowRoot.querySelector('[data-action="method-form"]') as HTMLFormElement;
+      const nameInput = form?.querySelector('[name="name"]') as HTMLInputElement;
+      const descInput = form?.querySelector('[name="description"]') as HTMLInputElement;
+      const codeInput = form?.querySelector('[name="code"]') as HTMLTextAreaElement;
+      const editingIdInput = form?.querySelector('[name="editing-id"]') as HTMLInputElement;
 
       if (nameInput) nameInput.value = 'selflink';
       if (descInput) descInput.value = 'Return current request URL';
-      if (codeInput) codeInput.value = 'return context.url;';
+      if (codeInput) codeInput.value = 'return ctx.url;';
       if (editingIdInput) editingIdInput.value = '';
     }
   }

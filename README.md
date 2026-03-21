@@ -180,7 +180,7 @@ mockMonkey.add('/api/data', {
 
 ```javascript
 mockMonkey.addMethod('userById', `
-  const id = context.params.id;
+  const id = ctx.params.id;
   return { id: parseInt(id), name: 'User ' + id };
 `);
 
@@ -190,20 +190,20 @@ mockMonkey.add('/api/users/@params.id', {
 ```
 
 **Available context variables:**
-- `context.url` - Request URL
-- `context.method` - Request method (GET, POST, etc.)
-- `context.body` - Request body
-- `context.params` - Extracted route parameters
-- `context.Mock` - Mock.js instance for generating random data
+- `ctx.url` - Request URL
+- `ctx.method` - Request method (GET, POST, etc.)
+- `ctx.body` - Request body
+- `ctx.params` - Extracted route parameters
+- `ctx.Mock` - Mock.js instance for generating random data
 
 **Best Practice: Using Mock.js inside methods**
 
-Method return values are not recursively processed. Use `context.Mock` to generate random data:
+Method return values are not recursively processed. Use `ctx.Mock` to generate random data:
 
 ```javascript
-// ✅ Correct: Use context.Mock in the method
+// ✅ Correct: Use ctx.Mock in the method
 mockMonkey.addMethod('getRandomUser', `
-  return context.Mock.mock({
+  return ctx.Mock.mock({
     id: '@natural(1, 1000)',
     name: '@name',
     email: '@email'
