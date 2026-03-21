@@ -1968,36 +1968,13 @@ export class Panel {
   }
 
   /**
-   * Convert full URL to route parameter pattern
-   * Example: https://example.com/api/users/123 → /api/users/:id
-   *          https://example.com/v1/users/123/posts/456 → /v1/users/:userId/posts/:postId
+   * Convert full URL to path pattern (preserves original URL)
+   * Example: https://example.com/api/users/123 → /api/users/123
    */
   private urlToRoutePattern(url: string): string {
     try {
       const urlObj = new URL(url);
-      const path = urlObj.pathname;
-
-      // Split path into segments
-      const segments = path.split('/').filter(s => s.length > 0);
-
-      // Convert numeric segments to :param
-      const convertedSegments = segments.map(segment => {
-        // Check if segment is numeric (ID-like)
-        if (/^\d+$/.test(segment)) {
-          return ':id';
-        }
-        // Check if segment is a UUID-like string
-        if (/^[0-9a-f-]{36}$/i.test(segment) || /^[0-9a-f]{24}$/i.test(segment)) {
-          return ':id';
-        }
-        // Check if segment looks like a hash (alphanumeric with possible special chars)
-        if (/^[a-zA-Z0-9_-]{8,}$/.test(segment)) {
-          return ':id';
-        }
-        return segment;
-      });
-
-      return '/' + convertedSegments.join('/');
+      return urlObj.pathname;
     } catch {
       // If URL parsing fails, return original
       return url;
