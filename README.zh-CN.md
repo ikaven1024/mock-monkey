@@ -136,6 +136,8 @@ mockMonkey.add('/api/users/@params.id', {
 
 你可以定义自定义 JavaScript 函数来实现更复杂的 Mock 逻辑：
 
+**简单引用**
+
 ```javascript
 // 通过控制台 API 添加
 mockMonkey.addMethod('getCurrentUser', 'return { id: 1, name: "Admin" };');
@@ -144,15 +146,44 @@ mockMonkey.addMethod('getCurrentUser', 'return { id: 1, name: "Admin" };');
 mockMonkey.add('/api/user', {
   user: '@getCurrentUser'
 });
+```
 
-// 在自定义方法中访问请求上下文
+**对象嵌入** - 将方法返回的对象嵌入到响应值中：
+
+```javascript
+mockMonkey.addMethod('getUserProfile', 'return { id: 1, name: "Alice", email: "alice@example.com" };');
+
+mockMonkey.add('/api/profile', {
+  user: '@{...getUserProfile}',
+  timestamp: 123456
+});
+
+// 返回: { "user": { "id": 1, "name": "Alice", "email": "alice@example.com" }, "timestamp": 123456 }
+```
+
+**对象展开** - 将方法返回的对象展开到当前对象中：
+
+```javascript
+mockMonkey.addMethod('getBaseResponse', 'return { status: "success", version: "1.0" };');
+
+mockMonkey.add('/api/data', {
+  '@{...getBaseResponse}': true,
+  data: { items: [1, 2, 3] }
+});
+
+// 返回: { "status": "success", "version": "1.0", "data": { "items": [1, 2, 3] } }
+```
+
+**访问请求上下文**
+
+```javascript
 mockMonkey.addMethod('userById', `
   const id = context.params.id;
   return { id: parseInt(id), name: 'User ' + id };
 `);
 
 mockMonkey.add('/api/users/@params.id', {
-  data: '@userById'
+  data: '@{...userById}'
 });
 ```
 

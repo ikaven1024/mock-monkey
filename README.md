@@ -136,6 +136,8 @@ Two syntax formats are supported:
 
 You can define custom JavaScript functions for more complex mock logic:
 
+**Simple Method Reference**
+
 ```javascript
 // Via console API
 mockMonkey.addMethod('getCurrentUser', 'return { id: 1, name: "Admin" };');
@@ -144,15 +146,44 @@ mockMonkey.addMethod('getCurrentUser', 'return { id: 1, name: "Admin" };');
 mockMonkey.add('/api/user', {
   user: '@getCurrentUser'
 });
+```
 
-// Access request context in custom methods
+**Object Embedding** - Embed function result as object value:
+
+```javascript
+mockMonkey.addMethod('getUserProfile', 'return { id: 1, name: "Alice", email: "alice@example.com" };');
+
+mockMonkey.add('/api/profile', {
+  user: '@{...getUserProfile}',
+  timestamp: 123456
+});
+
+// Result: { "user": { "id": 1, "name": "Alice", "email": "alice@example.com" }, "timestamp": 123456 }
+```
+
+**Object Spreading** - Spread function result into current object:
+
+```javascript
+mockMonkey.addMethod('getBaseResponse', 'return { status: "success", version: "1.0" };');
+
+mockMonkey.add('/api/data', {
+  '@{...getBaseResponse}': true,
+  data: { items: [1, 2, 3] }
+});
+
+// Result: { "status": "success", "version": "1.0", "data": { "items": [1, 2, 3] } }
+```
+
+**Access Request Context**
+
+```javascript
 mockMonkey.addMethod('userById', `
   const id = context.params.id;
   return { id: parseInt(id), name: 'User ' + id };
 `);
 
 mockMonkey.add('/api/users/@params.id', {
-  data: '@userById'
+  data: '@{...userById}'
 });
 ```
 
