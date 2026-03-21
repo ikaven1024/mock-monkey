@@ -81,6 +81,7 @@ After installing the script, visit any webpage:
 
 **📋 Rules Tab**
 - View all Mock rules
+- Drag to reorder (hold `⋮⋮` handle to adjust rule priority)
 - Enable/disable rules (click 🟢/⚫ icons)
 - Edit rules (click ✏️ icon)
 - Delete rules (click 🗑️ icon)
@@ -102,6 +103,7 @@ After installing the script, visit any webpage:
 
 **🛠️ Methods Tab (Alpha)**
 - Create custom JavaScript functions for dynamic responses
+- Drag to reorder (hold `⋮⋮` handle to adjust method order)
 - Access request context (URL, method, body, params)
 - Enable/disable custom methods
 - **Warning**: Alpha feature, APIs may change
