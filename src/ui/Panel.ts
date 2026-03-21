@@ -119,8 +119,20 @@ export class Panel {
     this.panelElement = panel;
 
     panel.innerHTML = `
-      <div class="mm-header" data-drag-handle="panel">
-        <h2 class="mm-title">MockMonkey</h2>
+      <div class="mm-header">
+        <div class="mm-header-left">
+          <div class="mm-panel-drag-handle" data-drag-handle="panel" title="${this.i18n.t('common.drag')}">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="4" cy="4" r="1.5" fill="currentColor"/>
+              <circle cx="12" cy="4" r="1.5" fill="currentColor"/>
+              <circle cx="4" cy="8" r="1.5" fill="currentColor"/>
+              <circle cx="12" cy="8" r="1.5" fill="currentColor"/>
+              <circle cx="4" cy="12" r="1.5" fill="currentColor"/>
+              <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+            </svg>
+          </div>
+          <h2 class="mm-title">MockMonkey</h2>
+        </div>
         <div class="mm-header-actions">
           <button class="mm-icon-btn" data-action="import" title="${this.i18n.t('common.import')}">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -600,11 +612,25 @@ export class Panel {
     container.parentNode?.replaceChild(newContainer, container);
 
     let dragSource: HTMLElement | null = null;
+    // Track if drag handle was clicked
+    let dragHandleClicked = false;
+
+    newContainer.addEventListener('mousedown', (e) => {
+      const target = e.target as HTMLElement;
+      const dragHandle = target.closest('.mm-drag-handle');
+      dragHandleClicked = !!dragHandle;
+    });
 
     newContainer.addEventListener('dragstart', (e) => {
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-rule-item') as HTMLElement;
       if (!item) return;
+
+      // Only allow dragging when clicking the drag handle
+      if (!dragHandleClicked) {
+        e.preventDefault();
+        return;
+      }
 
       dragSource = item;
       this.draggedItem = item;
@@ -640,6 +666,7 @@ export class Panel {
 
       this.draggedItem = null;
       dragSource = null;
+      dragHandleClicked = false;
     });
 
     newContainer.addEventListener('dragenter', (e) => {
@@ -701,11 +728,25 @@ export class Panel {
     container.parentNode?.replaceChild(newContainer, container);
 
     let dragSource: HTMLElement | null = null;
+    // Track if drag handle was clicked
+    let dragHandleClicked = false;
+
+    newContainer.addEventListener('mousedown', (e) => {
+      const target = e.target as HTMLElement;
+      const dragHandle = target.closest('.mm-drag-handle');
+      dragHandleClicked = !!dragHandle;
+    });
 
     newContainer.addEventListener('dragstart', (e) => {
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-method-item') as HTMLElement;
       if (!item) return;
+
+      // Only allow dragging when clicking the drag handle
+      if (!dragHandleClicked) {
+        e.preventDefault();
+        return;
+      }
 
       dragSource = item;
       this.draggedItem = item;
@@ -741,6 +782,7 @@ export class Panel {
 
       this.draggedItem = null;
       dragSource = null;
+      dragHandleClicked = false;
     });
 
     newContainer.addEventListener('dragenter', (e) => {
@@ -2063,8 +2105,30 @@ export class Panel {
         align-items: center;
         padding: 16px 20px;
         border-bottom: 1px solid #e0e0e0;
-        cursor: move;
         user-select: none;
+      }
+
+      .mm-header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .mm-panel-drag-handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        cursor: move;
+        color: #666;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+
+      .mm-panel-drag-handle:hover {
+        background: #f5f5f5;
+        color: #333;
       }
 
       .mm-title {

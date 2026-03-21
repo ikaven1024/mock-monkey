@@ -117,7 +117,7 @@ const translations: Record<Language, TranslationKey> = {
       confirmDelete: '确定要删除这条规则吗？',
       export: '导出',
       import: '导入',
-      drag: '拖动排序'
+      drag: '拖动面板'
     },
     tabs: {
       rules: '规则',
@@ -198,7 +198,7 @@ const translations: Record<Language, TranslationKey> = {
       confirmDelete: 'Are you sure you want to delete this rule?',
       export: 'Export',
       import: 'Import',
-      drag: 'Drag to reorder'
+      drag: 'Drag panel'
     },
     tabs: {
       rules: 'Rules',
