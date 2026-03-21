@@ -283,8 +283,12 @@ export class Interceptor {
           url: request.url,
           method: request.method,
           body: request.body,
-          params
-        } : { url: '', method: 'GET', params };
+          params,
+          Mock: (typeof window !== 'undefined' && (window as any).Mock) ? {
+            mock: (window as any).Mock.mock.bind((window as any).Mock),
+            Random: (window as any).Mock.Random
+          } : undefined
+        } : { url: '', method: 'GET', params, Mock: undefined };
 
         // Process mock response
         let mockResponse = this.processMockResponse(rule.response, context);
@@ -311,7 +315,11 @@ export class Interceptor {
       url: xhrObj._mockUrl as string || '',
       method: xhrObj._mockMethod as string || 'GET',
       body: xhrObj._mockBody as string | undefined,
-      params
+      params,
+      Mock: (typeof window !== 'undefined' && (window as any).Mock) ? {
+        mock: (window as any).Mock.mock.bind((window as any).Mock),
+        Random: (window as any).Mock.Random
+      } : undefined
     };
   }
 

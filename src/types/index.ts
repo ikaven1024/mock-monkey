@@ -132,4 +132,9 @@ export interface MethodContext {
   body?: string;
   /** Route parameters extracted from URL pattern matching */
   params?: RouteParams;
+  /** Mock.js instance for generating random data */
+  Mock?: {
+    mock: (template: unknown) => unknown;
+    Random: Record<string, unknown>;
+  };
 }

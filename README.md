@@ -194,16 +194,16 @@ mockMonkey.add('/api/users/@params.id', {
 - `context.method` - Request method (GET, POST, etc.)
 - `context.body` - Request body
 - `context.params` - Extracted route parameters
+- `context.Mock` - Mock.js instance for generating random data
 
 **Best Practice: Using Mock.js inside methods**
 
-Method return values are not recursively processed. If you need Mock.js placeholders or dynamic data, use Mock.js inside your method:
+Method return values are not recursively processed. Use `context.Mock` to generate random data:
 
 ```javascript
-// ✅ Correct: Use Mock.js inside the method
+// ✅ Correct: Use context.Mock in the method
 mockMonkey.addMethod('getRandomUser', `
-  const Mock = window.Mock;
-  return Mock.mock({
+  return context.Mock.mock({
     id: '@natural(1, 1000)',
     name: '@name',
     email: '@email'

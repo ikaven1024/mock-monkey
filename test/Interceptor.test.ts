@@ -552,5 +552,58 @@ describe('Interceptor', () => {
         value: 'simple value',
       });
     });
+
+    it('应该支持在方法中使用 context.Mock', () => {
+      // Save original mock implementation
+      const originalMock = mockMock.mock;
+
+      // Mock Mock.js to be available - only process specific placeholders
+      mockMock.mock.mockImplementation((template: unknown) => {
+        if (typeof template === 'object' && template !== null) {
+          const result: Record<string, unknown> = {};
+          for (const [key, value] of Object.entries(template as Record<string, unknown>)) {
+            // Only process simple @placeholder patterns, not @{...} patterns
+            if (typeof value === 'string' && /^@\w+$/.test(value)) {
+              result[key] = 'mocked_' + value.substring(1);
+            } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+              // Recursively process nested objects
+              result[key] = originalMock(value);
+            } else {
+              result[key] = value;
+            }
+          }
+          return result;
+        }
+        return template;
+      });
+
+      methodManager.add({
+        name: 'getRandomUser',
+        code: 'return context.Mock ? context.Mock.mock({ id: "@id", name: "@name" }) : { id: 1, name: "Default" };',
+        description: 'Get random user using Mock',
+      });
+
+      manager.add({
+        pattern: '/api/random-user',
+        response: {
+          user: '@{...getRandomUser}',
+        },
+      });
+
+      fetch('https://example.com/api/random-user');
+
+      vi.advanceTimersByTime(10);
+
+      const requests = recorder.getRequests();
+      const randomUserRequest = requests.find((r) => r.url.includes('/api/random-user'));
+
+      expect(randomUserRequest?.mocked).toBe(true);
+      expect(randomUserRequest?.response).toEqual({
+        user: { id: 'mocked_id', name: 'mocked_name' },
+      });
+
+      // Restore original mock
+      mockMock.mock.mockImplementation(originalMock);
+    });
   });
 });
