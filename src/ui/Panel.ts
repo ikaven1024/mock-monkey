@@ -994,7 +994,7 @@ export class Panel {
 
     const submitMethodBtn = this.shadowRoot.querySelector('[data-submit-method-btn]') as HTMLElement;
     if (submitMethodBtn) {
-      submitMethodBtn.textContent = this.editingMethodId ? this.i18n.t('methods.edit') : this.i18n.t('methods.add');
+      submitMethodBtn.textContent = this.editingMethodId ? this.i18n.t('methods.save') : this.i18n.t('methods.add');
     }
 
     const cancelMethodBtn = this.shadowRoot.querySelector('[data-action="cancel-method"]') as HTMLElement;
@@ -1475,7 +1475,7 @@ export class Panel {
 
     if (method) {
       this.editingMethodId = method.id;
-      if (submitBtn) submitBtn.textContent = this.i18n.t('methods.edit');
+      if (submitBtn) submitBtn.textContent = this.i18n.t('methods.save');
 
       // Fill form
       const nameInput = this.shadowRoot.querySelector('[name="name"]') as HTMLInputElement;
