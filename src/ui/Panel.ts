@@ -2368,7 +2368,7 @@ export class Panel {
 
       .mm-rule-actions {
         display: flex;
-        gap: 4px;
+        gap: 2px;
       }
 
       .mm-details--hidden {
@@ -2514,9 +2514,9 @@ export class Panel {
       .mm-btn-icon {
         background: none;
         border: none;
-        font-size: 16px;
+        font-size: 14px;
         cursor: pointer;
-        padding: 4px 8px;
+        padding: 2px 4px;
         border-radius: 4px;
         opacity: 0.7;
         transition: opacity 0.2s;
@@ -2788,7 +2788,7 @@ export class Panel {
 
       .mm-method-actions {
         display: flex;
-        gap: 4px;
+        gap: 2px;
       }
 
       .mm-method-description {

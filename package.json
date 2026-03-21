@@ -1,6 +1,6 @@
 {
   "name": "mock-monkey",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "浏览器本地接口 Mock 的 Tampermonkey 脚本",
   "main": "mock-monkey.user.js",
