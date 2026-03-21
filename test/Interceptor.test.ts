@@ -305,4 +305,252 @@ describe('Interceptor', () => {
       expect(errorRequest?.mocked).toBe(true);
     });
   });
+
+  describe('自定义方法 @{...functionName} 语法', () => {
+    beforeEach(() => {
+      interceptor.start();
+    });
+
+    it('应该支持对象嵌入语法：@{...functionName}', () => {
+      // 添加一个返回对象的自定义方法
+      methodManager.add({
+        name: 'getUserProfile',
+        code: 'return { id: 1, name: "Alice", email: "alice@example.com" };',
+        description: 'Get user profile',
+      });
+
+      manager.add({
+        pattern: '/api/user',
+        response: {
+          user: '@{...getUserProfile}',
+          timestamp: 123456,
+        },
+      });
+
+      fetch('https://example.com/api/user');
+
+      vi.advanceTimersByTime(10);
+
+      const requests = recorder.getRequests();
+      const userRequest = requests.find((r) => r.url.includes('/api/user'));
+
+      expect(userRequest?.mocked).toBe(true);
+      expect(userRequest?.response).toEqual({
+        user: { id: 1, name: 'Alice', email: 'alice@example.com' },
+        timestamp: 123456,
+      });
+    });
+
+    it('应该支持对象展开语法：@{...functionName} as key', () => {
+      methodManager.add({
+        name: 'getBaseResponse',
+        code: 'return { status: "success", version: "1.0" };',
+        description: 'Get base response',
+      });
+
+      manager.add({
+        pattern: '/api/data',
+        response: {
+          '@{...getBaseResponse}': true,
+          data: { items: [1, 2, 3] },
+        },
+      });
+
+      fetch('https://example.com/api/data');
+
+      vi.advanceTimersByTime(10);
+
+      const requests = recorder.getRequests();
+      const dataRequest = requests.find((r) => r.url.includes('/api/data'));
+
+      expect(dataRequest?.mocked).toBe(true);
+      expect(dataRequest?.response).toEqual({
+        status: 'success',
+        version: '1.0',
+        data: { items: [1, 2, 3] },
+      });
+    });
+
+    it('应该支持数组中的对象嵌入', () => {
+      methodManager.add({
+        name: 'getItem',
+        code: 'return { id: context.params?.id || 1, name: "Item" };',
+        description: 'Get item',
+      });
+
+      manager.add({
+        pattern: '/api/items',
+        response: {
+          items: ['@{...getItem}'],
+        },
+      });
+
+      fetch('https://example.com/api/items');
+
+      vi.advanceTimersByTime(10);
+
+      const requests = recorder.getRequests();
+      const itemsRequest = requests.find((r) => r.url.includes('/api/items'));
+
+      expect(itemsRequest?.mocked).toBe(true);
+      expect(itemsRequest?.response).toEqual({
+        items: [{ id: 1, name: 'Item' }],
+      });
+    });
+
+    it('应该支持嵌套对象中的方法调用', () => {
+      methodManager.add({
+        name: 'getAddress',
+        code: 'return { city: "Beijing", country: "China" };',
+        description: 'Get address',
+      });
+
+      manager.add({
+        pattern: '/api/profile',
+        response: {
+          user: {
+            name: 'Bob',
+            address: '@{...getAddress}',
+          },
+        },
+      });
+
+      fetch('https://example.com/api/profile');
+
+      vi.advanceTimersByTime(10);
+
+      const requests = recorder.getRequests();
+      const profileRequest = requests.find((r) => r.url.includes('/api/profile'));
+
+      expect(profileRequest?.mocked).toBe(true);
+      expect(profileRequest?.response).toEqual({
+        user: {
+          name: 'Bob',
+          address: { city: 'Beijing', country: 'China' },
+        },
+      });
+    });
+
+    it('应该支持多个对象展开', () => {
+      methodManager.add({
+        name: 'getMetadata',
+        code: 'return { timestamp: 123456, version: "1.0" };',
+        description: 'Get metadata',
+      });
+
+      methodManager.add({
+        name: 'getData',
+        code: 'return { items: [1, 2, 3], total: 3 };',
+        description: 'Get data',
+      });
+
+      manager.add({
+        pattern: '/api/multi',
+        response: {
+          '@{...getMetadata}': true,
+          '@{...getData}': true,
+        },
+      });
+
+      fetch('https://example.com/api/multi');
+
+      vi.advanceTimersByTime(10);
+
+      const requests = recorder.getRequests();
+      const multiRequest = requests.find((r) => r.url.includes('/api/multi'));
+
+      expect(multiRequest?.mocked).toBe(true);
+      expect(multiRequest?.response).toEqual({
+        timestamp: 123456,
+        version: '1.0',
+        items: [1, 2, 3],
+        total: 3,
+      });
+    });
+
+    it('方法返回非对象时不应展开', () => {
+      methodManager.add({
+        name: 'getString',
+        code: 'return "just a string";',
+        description: 'Get string',
+      });
+
+      manager.add({
+        pattern: '/api/string',
+        response: {
+          '@{...getString}': true,
+          other: 'value',
+        },
+      });
+
+      fetch('https://example.com/api/string');
+
+      vi.advanceTimersByTime(10);
+
+      const requests = recorder.getRequests();
+      const stringRequest = requests.find((r) => r.url.includes('/api/string'));
+
+      expect(stringRequest?.mocked).toBe(true);
+      // 非对象类型不应该被展开，只保留其他字段
+      expect(stringRequest?.response).toEqual({
+        other: 'value',
+      });
+    });
+
+    it('方法返回数组时不应展开', () => {
+      methodManager.add({
+        name: 'getArray',
+        code: 'return [1, 2, 3];',
+        description: 'Get array',
+      });
+
+      manager.add({
+        pattern: '/api/array',
+        response: {
+          '@{...getArray}': true,
+          other: 'value',
+        },
+      });
+
+      fetch('https://example.com/api/array');
+
+      vi.advanceTimersByTime(10);
+
+      const requests = recorder.getRequests();
+      const arrayRequest = requests.find((r) => r.url.includes('/api/array'));
+
+      expect(arrayRequest?.mocked).toBe(true);
+      // 数组类型不应该被展开
+      expect(arrayRequest?.response).toEqual({
+        other: 'value',
+      });
+    });
+
+    it('应该保持向后兼容：支持 @functionName 语法', () => {
+      methodManager.add({
+        name: 'getValue',
+        code: 'return "simple value";',
+        description: 'Get simple value',
+      });
+
+      manager.add({
+        pattern: '/api/simple',
+        response: {
+          value: '@getValue',
+        },
+      });
+
+      fetch('https://example.com/api/simple');
+
+      vi.advanceTimersByTime(10);
+
+      const requests = recorder.getRequests();
+      const simpleRequest = requests.find((r) => r.url.includes('/api/simple'));
+
+      expect(simpleRequest?.mocked).toBe(true);
+      expect(simpleRequest?.response).toEqual({
+        value: 'simple value',
+      });
+    });
+  });
 });
