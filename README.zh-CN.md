@@ -195,6 +195,27 @@ mockMonkey.add('/api/users/@params.id', {
 - `context.body` - 请求体
 - `context.params` - 提取的路由参数
 
+**最佳实践：在方法内部使用 Mock.js**
+
+方法返回的对象**不会**再次被处理，因此不能在返回值中使用 Mock.js 占位符或其他方法引用。如需动态数据，请在方法内部使用 Mock.js：
+
+```javascript
+// ✅ 正确：在方法内部使用 Mock.js
+mockMonkey.addMethod('getRandomUser', `
+  const Mock = window.Mock;
+  return Mock.mock({
+    id: '@natural(1, 1000)',
+    name: '@name',
+    email: '@email'
+  });
+`);
+
+// ❌ 错误：返回值中的占位符不会被处理
+mockMonkey.addMethod('getWrongUser', `
+  return { id: '@natural(1, 1000)', name: '@name' };
+`);
+```
+
 ### 5. 控制台 API（可选）
 
 也可以在浏览器控制台（F12）中使用 API：

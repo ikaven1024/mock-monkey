@@ -195,6 +195,27 @@ mockMonkey.add('/api/users/@params.id', {
 - `context.body` - Request body
 - `context.params` - Extracted route parameters
 
+**Best Practice: Using Mock.js inside methods**
+
+Method return values are not recursively processed. If you need Mock.js placeholders or dynamic data, use Mock.js inside your method:
+
+```javascript
+// ✅ Correct: Use Mock.js inside the method
+mockMonkey.addMethod('getRandomUser', `
+  const Mock = window.Mock;
+  return Mock.mock({
+    id: '@natural(1, 1000)',
+    name: '@name',
+    email: '@email'
+  });
+`);
+
+// ❌ Incorrect: Placeholders in returned object won't be processed
+mockMonkey.addMethod('getWrongUser', `
+  return { id: '@natural(1, 1000)', name: '@name' };
+`);
+```
+
 ### 5. Console API (Optional)
 
 You can also use the API in the browser console (F12):
