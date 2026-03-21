@@ -365,6 +365,8 @@ describe('MethodManager', () => {
     });
 
     it('should return null on execution error', () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
       manager.add({
         name: 'error',
         code: 'throw new Error("Test error")',
@@ -372,6 +374,12 @@ describe('MethodManager', () => {
 
       const result = manager.execute('error', mockContext);
       expect(result).toBeNull();
+      expect(errorSpy).toHaveBeenCalledWith(
+        '[MockMonkey] Method execution failed: @error',
+        expect.any(Error)
+      );
+
+      errorSpy.mockRestore();
     });
 
     it('should support Mock.js in context', () => {
