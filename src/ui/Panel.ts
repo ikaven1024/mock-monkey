@@ -196,8 +196,8 @@ export class Panel {
                 </div>
 
                 <div class="mm-form-actions">
-                  <button type="button" class="mm-btn" data-action="cancel-rule">${this.i18n.t('methods.cancel')}</button>
-                  <button type="submit" class="mm-btn mm-btn--primary" data-submit-rule-btn>${this.i18n.t('methods.save')}</button>
+                  <button type="button" class="mm-btn mm-btn--small" data-action="cancel-rule">${this.i18n.t('methods.cancel')}</button>
+                  <button type="submit" class="mm-btn mm-btn--small mm-btn--primary" data-submit-rule-btn>${this.i18n.t('methods.save')}</button>
                 </div>
               </form>
             </div>
@@ -236,8 +236,8 @@ export class Panel {
                 </div>
 
                 <div class="mm-form-actions">
-                  <button type="button" class="mm-btn" data-action="cancel-method">${this.i18n.t('methods.cancel')}</button>
-                  <button type="submit" class="mm-btn mm-btn--primary" data-submit-method-btn>${this.i18n.t('methods.save')}</button>
+                  <button type="button" class="mm-btn mm-btn--small" data-action="cancel-method">${this.i18n.t('methods.cancel')}</button>
+                  <button type="submit" class="mm-btn mm-btn--small mm-btn--primary" data-submit-method-btn>${this.i18n.t('methods.save')}</button>
                 </div>
               </form>
             </div>
@@ -1204,7 +1204,7 @@ export class Panel {
 
     const submitBtn = this.shadowRoot.querySelector('[data-submit-rule-btn]') as HTMLElement;
     if (submitBtn) {
-      submitBtn.textContent = this.editingRuleId ? this.i18n.t('form.saveRule') : this.i18n.t('form.addRule');
+      submitBtn.textContent = this.i18n.t('common.save');
     }
 
     // Update rules page
@@ -1235,7 +1235,7 @@ export class Panel {
 
     const submitMethodBtn = this.shadowRoot.querySelector('[data-submit-method-btn]') as HTMLElement;
     if (submitMethodBtn) {
-      submitMethodBtn.textContent = this.editingMethodId ? this.i18n.t('methods.save') : this.i18n.t('methods.add');
+      submitMethodBtn.textContent = this.i18n.t('common.save');
     }
 
     const cancelMethodBtn = this.shadowRoot.querySelector('[data-action="cancel-method"]') as HTMLElement;
@@ -1351,7 +1351,7 @@ export class Panel {
 
     if (rule) {
       this.editingRuleId = rule.id;
-      if (submitBtn) submitBtn.textContent = this.i18n.t('form.saveRule');
+      if (submitBtn) submitBtn.textContent = this.i18n.t('common.save');
 
       // Fill form
       const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
@@ -1368,7 +1368,7 @@ export class Panel {
     } else {
       // Add new rule
       this.editingRuleId = null;
-      if (submitBtn) submitBtn.textContent = this.i18n.t('form.addRule');
+      if (submitBtn) submitBtn.textContent = this.i18n.t('common.save');
 
       const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
       const responseInput = this.shadowRoot.querySelector('[name="response"]') as HTMLTextAreaElement;
@@ -1768,7 +1768,7 @@ export class Panel {
 
     if (method) {
       this.editingMethodId = method.id;
-      if (submitBtn) submitBtn.textContent = this.i18n.t('methods.save');
+      if (submitBtn) submitBtn.textContent = this.i18n.t('common.save');
 
       // Fill form - use specific selectors to avoid conflict with rule form
       const form = this.shadowRoot.querySelector('[data-action="method-form"]') as HTMLFormElement;
@@ -1784,7 +1784,7 @@ export class Panel {
     } else {
       // Add new method - pre-fill with selflink example
       this.editingMethodId = null;
-      if (submitBtn) submitBtn.textContent = this.i18n.t('methods.add');
+      if (submitBtn) submitBtn.textContent = this.i18n.t('common.save');
 
       const form = this.shadowRoot.querySelector('[data-action="method-form"]') as HTMLFormElement;
       const nameInput = form?.querySelector('[name="name"]') as HTMLInputElement;
