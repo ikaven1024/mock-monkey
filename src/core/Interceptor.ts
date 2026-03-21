@@ -400,18 +400,30 @@ export class Interceptor {
 
   /**
    * Process custom methods in response data
-   * Replaces @functionName patterns with actual method execution results
+   * Supports:
+   * - @functionName - Simple method reference
+   * - @{...functionName} - Object embedding (value) or spreading (key)
    */
   private processCustomMethods(data: unknown, context: MethodContext): unknown {
     if (data === null || data === undefined) {
       return data;
     }
 
-    // If string, check for @functionName pattern
+    // If string, check for @{...functionName} or @functionName pattern
     if (typeof data === 'string') {
-      const match = data.match(/^@(\w+)$/);
-      if (match) {
-        const methodName = match[1];
+      // Check for @{...functionName} pattern (object embedding)
+      const spreadMatch = data.match(/^@\{\.\.\.(\w+)\}$/);
+      if (spreadMatch) {
+        const methodName = spreadMatch[1];
+        const result = this.methodManager.execute(methodName, context);
+        if (result !== null) {
+          return result;
+        }
+      }
+      // Check for @functionName pattern (simple reference)
+      const simpleMatch = data.match(/^@(\w+)$/);
+      if (simpleMatch) {
+        const methodName = simpleMatch[1];
         const result = this.methodManager.execute(methodName, context);
         if (result !== null) {
           return result;
@@ -425,11 +437,23 @@ export class Interceptor {
       return data.map(item => this.processCustomMethods(item, context));
     }
 
-    // If object, process each value
+    // If object, process each value and check for @{...functionName} keys (object spread)
     if (typeof data === 'object') {
       const result: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-        result[key] = this.processCustomMethods(value, context);
+        // Check for @{...functionName} pattern in key (object spread)
+        const spreadKeyMatch = key.match(/^@\{\.\.\.(\w+)\}$/);
+        if (spreadKeyMatch) {
+          const methodName = spreadKeyMatch[1];
+          const methodResult = this.methodManager.execute(methodName, context);
+          if (methodResult !== null && typeof methodResult === 'object' && !Array.isArray(methodResult)) {
+            // Spread the returned object into result
+            Object.assign(result, methodResult);
+          }
+        } else {
+          // Recursively process nested values
+          result[key] = this.processCustomMethods(value, context);
+        }
       }
       return result;
     }
