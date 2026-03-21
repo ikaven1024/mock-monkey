@@ -53,6 +53,11 @@ export interface FormTranslations {
   urlPatternHint: string;
   responseData: string;
   responseDataPlaceholder: string;
+  placeholderHelp: string;
+  placeholderUrl: string;
+  placeholderMethod: string;
+  placeholderBody: string;
+  placeholderParams: string;
   delay: string;
   status: string;
   addRule: string;
@@ -97,6 +102,7 @@ export interface MethodsTranslations {
   contextBody: string;
   contextParams: string;
   contextMock: string;
+  contextSyntax: string;
   alphaWarning: string;
 }
 
@@ -140,6 +146,11 @@ const translations: Record<Language, TranslationKey> = {
       urlPatternHint: '支持字符串或正则表达式（格式：/pattern/flags）',
       responseData: '响应数据 (JSON) *',
       responseDataPlaceholder: '{"code": 200, "data": {}}',
+      placeholderHelp: '可用占位符',
+      placeholderUrl: '@ctx.url - 请求 URL',
+      placeholderMethod: '@ctx.method - 请求方法',
+      placeholderBody: '@ctx.body - 请求体 (JSON)',
+      placeholderParams: '@ctx.params - URL 路径参数',
       delay: '延迟 (ms)',
       status: '状态码',
       addRule: '添加规则',
@@ -180,8 +191,9 @@ const translations: Record<Language, TranslationKey> = {
       contextUrl: 'ctx.url - 请求 URL',
       contextMethod: 'ctx.method - 请求方法',
       contextBody: 'ctx.body - 请求体',
-      contextParams: 'ctx.params - URL 路径参数 (如 /api/user/@params.id)',
+      contextParams: 'ctx.params - URL 路径参数',
       contextMock: 'ctx.Mock - Mock.js 工具 (ctx.Mock.mock, ctx.Mock.Random)',
+      contextSyntax: '@ctx.xxx - 占位符语法，在响应数据中使用 @ctx.url 引用变量值',
       alphaWarning: 'Alpha 功能：自定义方法正在开发中，API 可能会变更。使用需谨慎，避免在生产环境使用。'
     }
   },
@@ -221,6 +233,11 @@ const translations: Record<Language, TranslationKey> = {
       urlPatternHint: 'Support string or regex (format: /pattern/flags)',
       responseData: 'Response Data (JSON) *',
       responseDataPlaceholder: '{"code": 200, "data": {}}',
+      placeholderHelp: 'Available placeholders',
+      placeholderUrl: '@ctx.url - Request URL',
+      placeholderMethod: '@ctx.method - Request method',
+      placeholderBody: '@ctx.body - Request body (JSON)',
+      placeholderParams: '@ctx.params - URL path params',
       delay: 'Delay (ms)',
       status: 'Status Code',
       addRule: 'Add Rule',
@@ -261,8 +278,9 @@ const translations: Record<Language, TranslationKey> = {
       contextUrl: 'ctx.url - Request URL',
       contextMethod: 'ctx.method - Request method',
       contextBody: 'ctx.body - Request body',
-      contextParams: 'ctx.params - URL path params (e.g. /api/user/@params.id)',
+      contextParams: 'ctx.params - URL path params',
       contextMock: 'ctx.Mock - Mock.js utilities (ctx.Mock.mock, ctx.Mock.Random)',
+      contextSyntax: '@ctx.xxx - Placeholder syntax, use @ctx.url in response data to reference variable values',
       alphaWarning: 'Alpha Feature: Custom methods are under development. APIs may change. Use with caution, not recommended for production.'
     }
   }

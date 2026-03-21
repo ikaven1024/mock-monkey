@@ -191,6 +191,13 @@ export class Panel {
                 <div class="mm-form-group">
                   <label class="mm-label">${this.i18n.t('form.responseData')}</label>
                   <textarea class="mm-textarea" name="response" rows="6" placeholder='${this.i18n.t('form.responseDataPlaceholder')}' required></textarea>
+                  <details class="mm-placeholder-help">
+                    <summary class="mm-placeholder-help-title">${this.i18n.t('form.placeholderHelp')}</summary>
+                    <code class="mm-code">${this.i18n.t('form.placeholderUrl')}</code>
+                    <code class="mm-code">${this.i18n.t('form.placeholderMethod')}</code>
+                    <code class="mm-code">${this.i18n.t('form.placeholderBody')}</code>
+                    <code class="mm-code">${this.i18n.t('form.placeholderParams')}</code>
+                  </details>
                 </div>
 
                 <div class="mm-form-row">
@@ -241,11 +248,12 @@ export class Panel {
                   <textarea class="mm-textarea" name="code" placeholder="${this.i18n.t('methods.codePlaceholder')}" required rows="8"></textarea>
                   <details class="mm-context-help">
                     <summary class="mm-context-help-title">${this.i18n.t('methods.contextHelp')}</summary>
-                    <code class="mm-code">${this.i18n.t('methods.contextUrl')}</code><br>
-                    <code class="mm-code">${this.i18n.t('methods.contextMethod')}</code><br>
-                    <code class="mm-code">${this.i18n.t('methods.contextBody')}</code><br>
-                    <code class="mm-code">${this.i18n.t('methods.contextParams')}</code><br>
+                    <code class="mm-code">${this.i18n.t('methods.contextUrl')}</code>
+                    <code class="mm-code">${this.i18n.t('methods.contextMethod')}</code>
+                    <code class="mm-code">${this.i18n.t('methods.contextBody')}</code>
+                    <code class="mm-code">${this.i18n.t('methods.contextParams')}</code>
                     <code class="mm-code">${this.i18n.t('methods.contextMock')}</code>
+                    <code class="mm-code">${this.i18n.t('methods.contextSyntax')}</code>
                   </details>
                 </div>
 
@@ -1191,6 +1199,18 @@ export class Panel {
       if (formGroups[1]) {
         const responseLabel = formGroups[1].querySelector('.mm-label') as HTMLElement;
         if (responseLabel) responseLabel.textContent = this.i18n.t('form.responseData');
+
+        // Placeholder help
+        const placeholderHelp = formGroups[1].querySelector('details.mm-placeholder-help') as HTMLDetailsElement;
+        if (placeholderHelp) {
+          const placeholderTitle = placeholderHelp.querySelector('summary.mm-placeholder-help-title') as HTMLElement;
+          if (placeholderTitle) placeholderTitle.textContent = this.i18n.t('form.placeholderHelp');
+          const placeholderCodes = placeholderHelp.querySelectorAll('.mm-code') as NodeListOf<HTMLElement>;
+          if (placeholderCodes[0]) placeholderCodes[0].textContent = this.i18n.t('form.placeholderUrl');
+          if (placeholderCodes[1]) placeholderCodes[1].textContent = this.i18n.t('form.placeholderMethod');
+          if (placeholderCodes[2]) placeholderCodes[2].textContent = this.i18n.t('form.placeholderBody');
+          if (placeholderCodes[3]) placeholderCodes[3].textContent = this.i18n.t('form.placeholderParams');
+        }
       }
 
       // Delay and Status labels (in form-row)
@@ -1289,6 +1309,7 @@ export class Panel {
           if (contextCodes[2]) contextCodes[2].textContent = this.i18n.t('methods.contextBody');
           if (contextCodes[3]) contextCodes[3].textContent = this.i18n.t('methods.contextParams');
           if (contextCodes[4]) contextCodes[4].textContent = this.i18n.t('methods.contextMock');
+          if (contextCodes[5]) contextCodes[5].textContent = this.i18n.t('methods.contextSyntax');
         }
       }
     }
@@ -2917,7 +2938,52 @@ export class Panel {
         background: #fff;
         padding: 4px 8px;
         border-radius: 4px;
-        margin-top: 4px;
+        margin-top: 2px;
+        font-family: 'Monaco', 'Menlo', monospace;
+      }
+
+      .mm-placeholder-help {
+        margin-top: 8px;
+        padding: 8px 12px;
+        background: #eff6ff;
+        border: 1px solid #93c5fd;
+        border-radius: 6px;
+      }
+
+      .mm-placeholder-help summary {
+        font-size: 12px;
+        font-weight: 500;
+        color: #2563eb;
+        cursor: pointer;
+        user-select: none;
+        list-style: none;
+        padding: 4px 0;
+      }
+
+      .mm-placeholder-help summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .mm-placeholder-help summary::before {
+        content: '▶';
+        display: inline-block;
+        font-size: 10px;
+        margin-right: 6px;
+        transition: transform 0.2s;
+      }
+
+      .mm-placeholder-help[open] summary::before {
+        transform: rotate(90deg);
+      }
+
+      .mm-placeholder-help code {
+        display: block;
+        font-size: 11px;
+        color: #374151;
+        background: #fff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-top: 2px;
         font-family: 'Monaco', 'Menlo', monospace;
       }
 
