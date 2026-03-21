@@ -167,12 +167,14 @@ mockMonkey.add('/api/profile', {
 mockMonkey.addMethod('getBaseResponse', 'return { status: "success", version: "1.0" };');
 
 mockMonkey.add('/api/data', {
-  '@{...getBaseResponse}': true,
+  '@{...getBaseResponse}': true,  // `true` 只是占位符，可以是任意值
   data: { items: [1, 2, 3] }
 });
 
 // 返回: { "status": "success", "version": "1.0", "data": { "items": [1, 2, 3] } }
 ```
+
+> **注意**：`@{...functionName}` 语法中的 `true` 只是一个占位符。JSON 要求键必须有值，所以可以使用任意值（`true`、`false`、`1`、`null` 等）——代码只检查键是否匹配模式。
 
 **访问请求上下文**
 

@@ -167,12 +167,14 @@ mockMonkey.add('/api/profile', {
 mockMonkey.addMethod('getBaseResponse', 'return { status: "success", version: "1.0" };');
 
 mockMonkey.add('/api/data', {
-  '@{...getBaseResponse}': true,
+  '@{...getBaseResponse}': true,  // `true` is a placeholder value, can be any value
   data: { items: [1, 2, 3] }
 });
 
 // Result: { "status": "success", "version": "1.0", "data": { "items": [1, 2, 3] } }
 ```
+
+> **Note**: The `true` value in `@{...functionName}` syntax is just a placeholder. JSON requires keys to have values, so any value (`true`, `false`, `1`, `null`, etc.) works—the code only checks if the key matches the pattern.
 
 **Access Request Context**
 
