@@ -30,7 +30,8 @@ class MockMonkey {
       onAdd: (method) => this.handleAddMethod(method),
       onUpdate: (id, method) => this.handleUpdateMethod(id, method),
       onDelete: (id) => this.handleDeleteMethod(id),
-      onToggle: (id) => this.handleToggleMethod(id)
+      onToggle: (id) => this.handleToggleMethod(id),
+      onReorder: (ids) => this.handleReorderMethods(ids)
     };
 
     this.panel = new PanelWithCallbacks(
@@ -38,7 +39,8 @@ class MockMonkey {
       {
         onToggle: (id) => this.handleToggleRule(id),
         onEdit: (id, rule) => this.handleEditRule(id, rule),
-        onDelete: (id) => this.handleDeleteRule(id)
+        onDelete: (id) => this.handleDeleteRule(id),
+        onReorder: (ids) => this.handleReorderRules(ids)
       },
       undefined,
       methodCallbacks
@@ -136,6 +138,15 @@ class MockMonkey {
   }
 
   /**
+   * Reorder rules
+   */
+  private handleReorderRules(ids: string[]): void {
+    this.manager.setOrder(ids);
+    this.updateRulesList();
+    console.log('[MockMonkey] Rules reordered');
+  }
+
+  /**
    * Update rules list
    */
   private updateRulesList(): void {
@@ -206,6 +217,15 @@ class MockMonkey {
     const enabled = this.methodManager.toggle(id);
     this.updateMethodsList();
     console.log(`[MockMonkey] Method ${enabled ? 'enabled' : 'disabled'}`);
+  }
+
+  /**
+   * Reorder methods
+   */
+  private handleReorderMethods(ids: string[]): void {
+    this.methodManager.setOrder(ids);
+    this.updateMethodsList();
+    console.log('[MockMonkey] Methods reordered');
   }
 
   /**

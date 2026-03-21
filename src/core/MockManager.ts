@@ -209,6 +209,27 @@ export class MockManager {
   }
 
   /**
+   * Reorder rules by ID array
+   */
+  setOrder(ids: string[]): void {
+    const newMap = new Map<string, MockRule>();
+    for (const id of ids) {
+      const rule = this.rules.get(id);
+      if (rule) {
+        newMap.set(id, rule);
+      }
+    }
+    // Add any remaining rules (in case of data inconsistency)
+    for (const [id, rule] of this.rules) {
+      if (!newMap.has(id)) {
+        newMap.set(id, rule);
+      }
+    }
+    this.rules = newMap;
+    this.saveToStorage();
+  }
+
+  /**
    * Generate unique ID
    */
   private generateId(): string {

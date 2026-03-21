@@ -38,6 +38,10 @@ export class Panel {
   private currentMethods: MockMethod[] = [];
   private editingMethodId: string | null = null;
 
+  // List drag reordering state
+  private draggedItem: HTMLElement | null = null;
+  private dragOverItem: HTMLElement | null = null;
+
   constructor(
     private onAddRule: (rule: RuleFormData) => void,
     private onUpdateRule?: (id: string, rule: RuleFormData) => void,
@@ -584,6 +588,196 @@ export class Panel {
     } catch (e) {
       console.warn('[MockMonkey] 加载面板位置失败:', e);
     }
+  }
+
+  /**
+   * Bind drag events for rule list reordering
+   */
+  private bindRuleDragEvents(listContainer: Element): void {
+    const container = listContainer as HTMLElement;
+    let dragSource: HTMLElement | null = null;
+
+    container.addEventListener('dragstart', (e) => {
+      const target = e.target as HTMLElement;
+      const item = target.closest('.mm-rule-item') as HTMLElement;
+      if (!item) return;
+
+      dragSource = item;
+      this.draggedItem = item;
+      item.classList.add('mm-rule-item--dragging');
+
+      // Set drag data (required for Firefox)
+      const dragEvent = e as DragEvent;
+      if (dragEvent.dataTransfer) {
+        dragEvent.dataTransfer.setData('text/plain', item.dataset.ruleId || '');
+        dragEvent.dataTransfer.effectAllowed = 'move';
+      }
+    });
+
+    container.addEventListener('dragend', (e) => {
+      const target = e.target as HTMLElement;
+      const item = target.closest('.mm-rule-item') as HTMLElement;
+      if (!item) return;
+
+      item.classList.remove('mm-rule-item--dragging');
+      if (this.dragOverItem) {
+        this.dragOverItem.classList.remove('mm-rule-item--drag-over');
+        this.dragOverItem = null;
+      }
+
+      // Collect new order and save
+      const newOrderIds = Array.from(container.querySelectorAll('.mm-rule-item'))
+        .map(el => (el as HTMLElement).dataset.ruleId)
+        .filter((id): id is string => id !== undefined);
+
+      if (newOrderIds.length > 0 && (this as any).onReorderRules) {
+        (this as any).onReorderRules(newOrderIds);
+      }
+
+      this.draggedItem = null;
+      dragSource = null;
+    });
+
+    container.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+    });
+
+    container.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const target = e.target as HTMLElement;
+      const item = target.closest('.mm-rule-item') as HTMLElement;
+      if (!item || item === dragSource) return;
+
+      if (this.dragOverItem && this.dragOverItem !== item) {
+        this.dragOverItem.classList.remove('mm-rule-item--drag-over');
+      }
+      this.dragOverItem = item;
+      item.classList.add('mm-rule-item--drag-over');
+    });
+
+    container.addEventListener('dragleave', (e) => {
+      const target = e.target as HTMLElement;
+      if (target === container && this.dragOverItem) {
+        this.dragOverItem.classList.remove('mm-rule-item--drag-over');
+        this.dragOverItem = null;
+      }
+    });
+
+    container.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const target = e.target as HTMLElement;
+      const item = target.closest('.mm-rule-item') as HTMLElement;
+      if (!item || !dragSource || dragSource === item) return;
+
+      const allItems = Array.from(container.querySelectorAll('.mm-rule-item'));
+      const draggedIndex = allItems.indexOf(dragSource);
+      const targetIndex = allItems.indexOf(item);
+
+      if (draggedIndex < targetIndex) {
+        container.insertBefore(dragSource, item.nextSibling);
+      } else {
+        container.insertBefore(dragSource, item);
+      }
+
+      item.classList.remove('mm-rule-item--drag-over');
+      this.dragOverItem = null;
+    });
+  }
+
+  /**
+   * Bind drag events for method list reordering
+   */
+  private bindMethodDragEvents(listContainer: Element): void {
+    const container = listContainer as HTMLElement;
+    let dragSource: HTMLElement | null = null;
+
+    container.addEventListener('dragstart', (e) => {
+      const target = e.target as HTMLElement;
+      const item = target.closest('.mm-method-item') as HTMLElement;
+      if (!item) return;
+
+      dragSource = item;
+      this.draggedItem = item;
+      item.classList.add('mm-method-item--dragging');
+
+      // Set drag data (required for Firefox)
+      const dragEvent = e as DragEvent;
+      if (dragEvent.dataTransfer) {
+        dragEvent.dataTransfer.setData('text/plain', item.dataset.methodId || '');
+        dragEvent.dataTransfer.effectAllowed = 'move';
+      }
+    });
+
+    container.addEventListener('dragend', (e) => {
+      const target = e.target as HTMLElement;
+      const item = target.closest('.mm-method-item') as HTMLElement;
+      if (!item) return;
+
+      item.classList.remove('mm-method-item--dragging');
+      if (this.dragOverItem) {
+        this.dragOverItem.classList.remove('mm-method-item--drag-over');
+        this.dragOverItem = null;
+      }
+
+      // Collect new order and save
+      const newOrderIds = Array.from(container.querySelectorAll('.mm-method-item'))
+        .map(el => (el as HTMLElement).dataset.methodId)
+        .filter((id): id is string => id !== undefined);
+
+      if (newOrderIds.length > 0 && (this as any).onReorderMethods) {
+        (this as any).onReorderMethods(newOrderIds);
+      }
+
+      this.draggedItem = null;
+      dragSource = null;
+    });
+
+    container.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+    });
+
+    container.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const target = e.target as HTMLElement;
+      const item = target.closest('.mm-method-item') as HTMLElement;
+      if (!item || item === dragSource) return;
+
+      if (this.dragOverItem && this.dragOverItem !== item) {
+        this.dragOverItem.classList.remove('mm-method-item--drag-over');
+      }
+      this.dragOverItem = item;
+      item.classList.add('mm-method-item--drag-over');
+    });
+
+    container.addEventListener('dragleave', (e) => {
+      const target = e.target as HTMLElement;
+      if (target === container && this.dragOverItem) {
+        this.dragOverItem.classList.remove('mm-method-item--drag-over');
+        this.dragOverItem = null;
+      }
+    });
+
+    container.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const target = e.target as HTMLElement;
+      const item = target.closest('.mm-method-item') as HTMLElement;
+      if (!item || !dragSource || dragSource === item) return;
+
+      const allItems = Array.from(container.querySelectorAll('.mm-method-item'));
+      const draggedIndex = allItems.indexOf(dragSource);
+      const targetIndex = allItems.indexOf(item);
+
+      if (draggedIndex < targetIndex) {
+        container.insertBefore(dragSource, item.nextSibling);
+      } else {
+        container.insertBefore(dragSource, item);
+      }
+
+      item.classList.remove('mm-method-item--drag-over');
+      this.dragOverItem = null;
+    });
   }
 
   /**
@@ -1230,8 +1424,9 @@ export class Panel {
     listContainer.innerHTML = filteredRules
       .map(
         (rule) => `
-      <div class="mm-rule-item ${rule.enabled ? '' : 'mm-rule-item--disabled'}">
+      <div class="mm-rule-item ${rule.enabled ? '' : 'mm-rule-item--disabled'}" data-rule-id="${rule.id}" draggable="true">
         <div class="mm-rule-header">
+          <span class="mm-drag-handle" title="${this.i18n.t('common.drag')}">⋮⋮</span>
           <span class="mm-rule-pattern" title="${this.escapeHtmlAttr(rule.patternStr)}">${this.escapeHtml(rule.patternStr)}</span>
           <div class="mm-rule-actions">
             <button class="mm-btn-icon" data-action="toggle" data-id="${rule.id}" title="${rule.enabled ? this.i18n.t('common.disable') : this.i18n.t('common.enable')}">
@@ -1278,6 +1473,11 @@ export class Panel {
         if (id) (this as any).onDeleteRule(id);
       });
     });
+
+    // Bind drag events for reordering (only when not filtering)
+    if (!this.rulesSearchQuery) {
+      this.bindRuleDragEvents(listContainer);
+    }
   }
 
   /**
@@ -1412,8 +1612,9 @@ export class Panel {
     }
 
     listContainer.innerHTML = methods.map(method => `
-      <div class="mm-method-item ${method.enabled ? '' : 'mm-method-item--disabled'}">
+      <div class="mm-method-item ${method.enabled ? '' : 'mm-method-item--disabled'}" data-method-id="${method.id}" draggable="true">
         <div class="mm-method-header">
+          <span class="mm-drag-handle" title="${this.i18n.t('common.drag')}">⋮⋮</span>
           <div class="mm-method-name">
             <code>@${method.name}</code>
             ${!method.enabled ? `<span class="mm-badge mm-badge--disabled">${this.i18n.t('common.disable')}</span>` : ''}
@@ -1461,6 +1662,9 @@ export class Panel {
         }
       });
     });
+
+    // Bind drag events for reordering
+    this.bindMethodDragEvents(listContainer);
   }
 
   /**
@@ -2045,6 +2249,44 @@ export class Panel {
         opacity: 0.6;
       }
 
+      .mm-rule-item--dragging {
+        opacity: 0.5;
+        cursor: move;
+      }
+
+      .mm-rule-item--drag-over {
+        border-color: #4f46e5;
+        border-style: dashed;
+      }
+
+      .mm-method-item--dragging {
+        opacity: 0.5;
+        cursor: move;
+      }
+
+      .mm-method-item--drag-over {
+        border-color: #4f46e5;
+        border-style: dashed;
+      }
+
+      .mm-drag-handle {
+        cursor: grab;
+        color: #9ca3af;
+        padding: 0 4px;
+        margin-right: 4px;
+        font-size: 12px;
+        line-height: 1;
+        user-select: none;
+      }
+
+      .mm-drag-handle:hover {
+        color: #6b7280;
+      }
+
+      .mm-drag-handle:active {
+        cursor: grabbing;
+      }
+
       .mm-rule-header {
         display: flex;
         justify-content: space-between;
@@ -2607,6 +2849,7 @@ export interface RuleCallbacks {
   onToggle: (id: string) => void;
   onEdit: (id: string, rule: RuleFormData) => void;
   onDelete: (id: string) => void;
+  onReorder?: (ids: string[]) => void;
 }
 
 /**
@@ -2617,6 +2860,7 @@ export interface MethodCallbacks {
   onUpdate: (id: string, method: CreateMockMethodParams) => void;
   onDelete: (id: string) => void;
   onToggle: (id: string) => void;
+  onReorder?: (ids: string[]) => void;
 }
 
 // Extend Panel class to support callbacks
@@ -2648,6 +2892,18 @@ export class PanelWithCallbacks extends Panel {
 
   onDeleteRule(id: string): void {
     this.callbacks.onDelete(id);
+  }
+
+  onReorderRules(ids: string[]): void {
+    if (this.callbacks.onReorder) {
+      this.callbacks.onReorder(ids);
+    }
+  }
+
+  onReorderMethods(ids: string[]): void {
+    if (this.methodCallbacks?.onReorder) {
+      this.methodCallbacks.onReorder(ids);
+    }
   }
 
   updateMethods(methods: MockMethod[]): void {

@@ -123,6 +123,27 @@ export class MethodManager {
   }
 
   /**
+   * Reorder methods by ID array
+   */
+  setOrder(ids: string[]): void {
+    const newMap = new Map<string, MockMethod>();
+    for (const id of ids) {
+      const method = this.methods.get(id);
+      if (method) {
+        newMap.set(id, method);
+      }
+    }
+    // Add any remaining methods (in case of data inconsistency)
+    for (const [id, method] of this.methods) {
+      if (!newMap.has(id)) {
+        newMap.set(id, method);
+      }
+    }
+    this.methods = newMap;
+    this.saveToStorage();
+  }
+
+  /**
    * Execute custom method
    */
   execute(name: string, ctx: MethodContext): unknown {

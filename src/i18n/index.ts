@@ -27,6 +27,7 @@ export interface CommonTranslations {
   confirmDelete: string;
   export: string;
   import: string;
+  drag: string;
 }
 
 export interface TabsTranslations {
@@ -114,7 +115,8 @@ const translations: Record<Language, TranslationKey> = {
       details: '详情',
       confirmDelete: '确定要删除这条规则吗？',
       export: '导出',
-      import: '导入'
+      import: '导入',
+      drag: '拖动排序'
     },
     tabs: {
       rules: '规则',
@@ -193,7 +195,8 @@ const translations: Record<Language, TranslationKey> = {
       details: 'Details',
       confirmDelete: 'Are you sure you want to delete this rule?',
       export: 'Export',
-      import: 'Import'
+      import: 'Import',
+      drag: 'Drag to reorder'
     },
     tabs: {
       rules: 'Rules',
