@@ -112,32 +112,61 @@ npm run build
 - 点击顶部语言按钮（EN/中）切换界面语言
 - 语言偏好自动保存到 localStorage
 
-### 3. 路由参数匹配
+### 3. 路由参数与查询参数
 
-MockMonkey 支持从 URL 中提取路由参数并在响应数据中使用：
+MockMonkey 支持同时从 URL 中提取**路由参数**和**查询参数**，两者都可在 `ctx.params` 中使用：
 
 ```javascript
 // 规则模式: /api/users/:id
-// 请求 URL: /api/users/123
-// 响应数据中的 @ctx.params.id 会被替换为 "123"
+// 请求 URL: /api/users/123?page=2&pageSize=10
+// ctx.params = { id: "123", page: "2", pageSize: "10" }
 
 mockMonkey.add('/api/users/:id', {
   userId: '@number(ctx.params.id)',
-  message: 'User @ctx.params.id loaded successfully'
+  page: '@number(ctx.params.page)',
+  pageSize: '@number(ctx.params.pageSize)',
+  message: 'User @ctx.params.id on page @ctx.params.page'
 });
 
-// 示例：GET /api/users/456 返回：
-// { "userId": 456, "message": "User 456 loaded successfully" }
+// 示例：GET /api/users/456?page=3 返回：
+// { "userId": 456, "page": 3, "pageSize": 10, "message": "User 456 on page 3" }
+```
+
+**仅使用查询参数：**
+
+```javascript
+// 无路由参数，只使用查询参数
+mockMonkey.add('/api/users', {
+  page: '@number(ctx.params.page)',
+  limit: '@number(ctx.params.limit)',
+  filter: '@ctx.params.filter'
+});
+
+// GET /api/users?page=1&limit=20&filter=active
+// => { "page": 1, "limit": 20, "filter": "active" }
+```
+
+**参数优先级：**
+
+当路由参数和查询参数同名时，查询参数优先：
+
+```javascript
+mockMonkey.add('/api/items/:id', {
+  itemId: '@ctx.params.id'
+});
+
+// GET /api/items/123?id=999
+// => { "itemId": "999" }  // 查询参数覆盖了路由参数
 ```
 
 **类型转换语法：**
 
 | 语法 | 效果 |
 |------|------|
-| `@number(ctx.params.id)` | 返回数字 |
-| `@string(ctx.params.id)` | 返回字符串（默认） |
-| `@boolean(ctx.params.id)` | 返回布尔值 |
-| `@ctx.params.id` | 返回字符串 |
+| `@number(ctx.params.page)` | 返回数字 |
+| `@string(ctx.params.page)` | 返回字符串（默认） |
+| `@boolean(ctx.params.active)` | 返回布尔值 |
+| `@ctx.params.filter` | 返回字符串 |
 
 **支持两种语法格式：**
 - `@ctx.params.xxx` - 简单占位符

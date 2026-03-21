@@ -127,7 +127,8 @@ export class MockManager {
   }
 
   /**
-   * Find matching Mock rule with extracted route parameters
+   * Find matching Mock rule with extracted route parameters and query parameters
+   * Query parameters are merged with route params (query params take precedence)
    * @returns Object containing matched rule and extracted params, or null if no match
    */
   findMatchWithParams(url: string): { rule: MockRule; params: RouteParams } | null {
@@ -135,7 +136,10 @@ export class MockManager {
       if (!rule.enabled) continue;
 
       if (rule.pattern instanceof RegExp) {
-        if (rule.pattern.test(url)) return { rule, params: {} };
+        if (rule.pattern.test(url)) {
+          const queryParams = this.extractQueryParams(url);
+          return { rule, params: queryParams };
+        }
       } else {
         const patternStr = rule.pattern as string;
         // Check if pattern contains route parameters (:param)
@@ -145,12 +149,16 @@ export class MockManager {
           const pathname = this.extractPathname(url);
           const match = pathname.match(regex);
           if (match) {
-            const params = this.extractParamsFromMatch(patternStr, match);
+            const routeParams = this.extractParamsFromMatch(patternStr, match);
+            const queryParams = this.extractQueryParams(url);
+            // Merge route params and query params (query params take precedence)
+            const params = { ...routeParams, ...queryParams };
             return { rule, params };
           }
         } else if (url.includes(patternStr)) {
           // Fallback to substring matching for backward compatibility
-          return { rule, params: {} };
+          const queryParams = this.extractQueryParams(url);
+          return { rule, params: queryParams };
         }
       }
     }
@@ -180,6 +188,34 @@ export class MockManager {
       }
     }
 
+    return params;
+  }
+
+  /**
+   * Extract query parameters from URL
+   * Example: "/api/users?page=1&limit=10" => { page: "1", limit: "10" }
+   */
+  private extractQueryParams(url: string): RouteParams {
+    const params: RouteParams = {};
+    try {
+      const urlObj = new URL(url);
+      urlObj.searchParams.forEach((value, key) => {
+        params[key] = value;
+      });
+    } catch {
+      // If URL parsing fails, try to parse query string manually
+      const queryStart = url.indexOf('?');
+      if (queryStart !== -1) {
+        const queryString = url.slice(queryStart + 1);
+        const pairs = queryString.split('&');
+        for (const pair of pairs) {
+          const [key, value] = pair.split('=');
+          if (key) {
+            params[key] = value || '';
+          }
+        }
+      }
+    }
     return params;
   }
 

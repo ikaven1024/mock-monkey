@@ -112,32 +112,61 @@ After installing the script, visit any webpage:
 - Click language button (EN/中) in header to switch interface language
 - Language preference auto-saves to localStorage
 
-### 3. Route Parameters
+### 3. Route Parameters & Query Parameters
 
-MockMonkey supports extracting route parameters from URLs and using them in responses:
+MockMonkey supports extracting route parameters AND query parameters from URLs. Both are available in `ctx.params`:
 
 ```javascript
 // Rule pattern: /api/users/:id
-// URL: /api/users/123
-// Response will use "123" for @ctx.params.id
+// URL: /api/users/123?page=2&pageSize=10
+// ctx.params = { id: "123", page: "2", pageSize: "10" }
 
 mockMonkey.add('/api/users/:id', {
   userId: '@number(ctx.params.id)',
-  message: 'User @ctx.params.id loaded successfully'
+  page: '@number(ctx.params.page)',
+  pageSize: '@number(ctx.params.pageSize)',
+  message: 'User @ctx.params.id on page @ctx.params.page'
 });
 
-// Example: GET /api/users/456 returns:
-// { "userId": 456, "message": "User 456 loaded successfully" }
+// Example: GET /api/users/456?page=3 returns:
+// { "userId": 456, "page": 3, "pageSize": 10, "message": "User 456 on page 3" }
+```
+
+**Query Parameters Only:**
+
+```javascript
+// No route parameters, just query params
+mockMonkey.add('/api/users', {
+  page: '@number(ctx.params.page)',
+  limit: '@number(ctx.params.limit)',
+  filter: '@ctx.params.filter'
+});
+
+// GET /api/users?page=1&limit=20&filter=active
+// => { "page": 1, "limit": 20, "filter": "active" }
+```
+
+**Parameter Priority:**
+
+When route and query parameters have the same name, query parameters take precedence:
+
+```javascript
+mockMonkey.add('/api/items/:id', {
+  itemId: '@ctx.params.id'
+});
+
+// GET /api/items/123?id=999
+// => { "itemId": "999" }  // Query param overrides route param
 ```
 
 **Type Conversion Syntax:**
 
 | Syntax | Effect |
 |--------|--------|
-| `@number(ctx.params.id)` | Returns number |
-| `@string(ctx.params.id)` | Returns string (default) |
-| `@boolean(ctx.params.id)` | Returns boolean |
-| `@ctx.params.id` | Returns string |
+| `@number(ctx.params.page)` | Returns number |
+| `@string(ctx.params.page)` | Returns string (default) |
+| `@boolean(ctx.params.active)` | Returns boolean |
+| `@ctx.params.filter` | Returns string |
 
 **Two syntax formats are supported:**
 - `@ctx.params.xxx` - Simple placeholder
