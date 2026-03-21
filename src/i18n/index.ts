@@ -66,6 +66,7 @@ export interface FormTranslations {
   importError: string;
   jsonError: string;
   regexError: string;
+  helpLinkTitle: string;
 }
 
 export interface NetworkTranslations {
@@ -104,6 +105,7 @@ export interface MethodsTranslations {
   contextMock: string;
   contextSyntax: string;
   alphaWarning: string;
+  helpLinkTitle: string;
 }
 
 /**
@@ -158,7 +160,8 @@ const translations: Record<Language, TranslationKey> = {
       cancelEdit: '取消',
       importError: '导入文件格式错误：必须是数组',
       jsonError: '响应数据 JSON 格式错误',
-      regexError: '正则表达式格式错误'
+      regexError: '正则表达式格式错误',
+      helpLinkTitle: '查看规则语法说明'
     },
     network: {
       count: '条请求',
@@ -194,7 +197,8 @@ const translations: Record<Language, TranslationKey> = {
       contextParams: 'ctx.params - URL 路径参数',
       contextMock: 'ctx.Mock - Mock.js 工具 (ctx.Mock.mock, ctx.Mock.Random)',
       contextSyntax: '@ctx.xxx - 占位符语法，在响应数据中使用 @ctx.url 引用变量值',
-      alphaWarning: 'Alpha 功能：自定义方法正在开发中，API 可能会变更。使用需谨慎，避免在生产环境使用。'
+      alphaWarning: 'Alpha 功能：自定义方法正在开发中，API 可能会变更。使用需谨慎，避免在生产环境使用。',
+      helpLinkTitle: '查看高级用法说明'
     }
   },
   en: {
@@ -245,7 +249,8 @@ const translations: Record<Language, TranslationKey> = {
       cancelEdit: 'Cancel',
       importError: 'Import file format error: must be an array',
       jsonError: 'Response data JSON format error',
-      regexError: 'Regex format error'
+      regexError: 'Regex format error',
+      helpLinkTitle: 'View rule syntax documentation'
     },
     network: {
       count: 'requests',
@@ -281,7 +286,8 @@ const translations: Record<Language, TranslationKey> = {
       contextParams: 'ctx.params - URL path params',
       contextMock: 'ctx.Mock - Mock.js utilities (ctx.Mock.mock, ctx.Mock.Random)',
       contextSyntax: '@ctx.xxx - Placeholder syntax, use @ctx.url in response data to reference variable values',
-      alphaWarning: 'Alpha Feature: Custom methods are under development. APIs may change. Use with caution, not recommended for production.'
+      alphaWarning: 'Alpha Feature: Custom methods are under development. APIs may change. Use with caution, not recommended for production.',
+      helpLinkTitle: 'View advanced usage documentation'
     }
   }
 };

@@ -177,15 +177,11 @@ export class Panel {
                 </div>
 
                 <div class="mm-form-group">
-                  <label class="mm-label">${this.i18n.t('form.responseData')}</label>
+                  <label class="mm-label">
+                    ${this.i18n.t('form.responseData')}
+                    <a href="https://github.com/ikaven1024/mock-monkey/wiki/Rule-Syntax" target="_blank" class="mm-help-link" title="${this.i18n.t('form.helpLinkTitle')}">?</a>
+                  </label>
                   <textarea class="mm-textarea" name="response" rows="6" placeholder='${this.i18n.t('form.responseDataPlaceholder')}' required></textarea>
-                  <details class="mm-placeholder-help">
-                    <summary class="mm-placeholder-help-title">${this.i18n.t('form.placeholderHelp')}</summary>
-                    <code class="mm-code">${this.i18n.t('form.placeholderUrl')}</code>
-                    <code class="mm-code">${this.i18n.t('form.placeholderMethod')}</code>
-                    <code class="mm-code">${this.i18n.t('form.placeholderBody')}</code>
-                    <code class="mm-code">${this.i18n.t('form.placeholderParams')}</code>
-                  </details>
                 </div>
 
                 <div class="mm-form-row">
@@ -232,17 +228,11 @@ export class Panel {
                 </div>
 
                 <div class="mm-form-group">
-                  <label class="mm-label">${this.i18n.t('methods.code')}</label>
+                  <label class="mm-label">
+                    ${this.i18n.t('methods.code')}
+                    <a href="https://github.com/ikaven1024/mock-monkey/wiki/Advanced-Usage" target="_blank" class="mm-help-link" title="${this.i18n.t('methods.helpLinkTitle')}">?</a>
+                  </label>
                   <textarea class="mm-textarea" name="code" placeholder="${this.i18n.t('methods.codePlaceholder')}" required rows="8"></textarea>
-                  <details class="mm-context-help">
-                    <summary class="mm-context-help-title">${this.i18n.t('methods.contextHelp')}</summary>
-                    <code class="mm-code">${this.i18n.t('methods.contextUrl')}</code>
-                    <code class="mm-code">${this.i18n.t('methods.contextMethod')}</code>
-                    <code class="mm-code">${this.i18n.t('methods.contextBody')}</code>
-                    <code class="mm-code">${this.i18n.t('methods.contextParams')}</code>
-                    <code class="mm-code">${this.i18n.t('methods.contextMock')}</code>
-                    <code class="mm-code">${this.i18n.t('methods.contextSyntax')}</code>
-                  </details>
                 </div>
 
                 <div class="mm-form-actions">
@@ -1186,18 +1176,11 @@ export class Panel {
       // Response Data label
       if (formGroups[1]) {
         const responseLabel = formGroups[1].querySelector('.mm-label') as HTMLElement;
-        if (responseLabel) responseLabel.textContent = this.i18n.t('form.responseData');
-
-        // Placeholder help
-        const placeholderHelp = formGroups[1].querySelector('details.mm-placeholder-help') as HTMLDetailsElement;
-        if (placeholderHelp) {
-          const placeholderTitle = placeholderHelp.querySelector('summary.mm-placeholder-help-title') as HTMLElement;
-          if (placeholderTitle) placeholderTitle.textContent = this.i18n.t('form.placeholderHelp');
-          const placeholderCodes = placeholderHelp.querySelectorAll('.mm-code') as NodeListOf<HTMLElement>;
-          if (placeholderCodes[0]) placeholderCodes[0].textContent = this.i18n.t('form.placeholderUrl');
-          if (placeholderCodes[1]) placeholderCodes[1].textContent = this.i18n.t('form.placeholderMethod');
-          if (placeholderCodes[2]) placeholderCodes[2].textContent = this.i18n.t('form.placeholderBody');
-          if (placeholderCodes[3]) placeholderCodes[3].textContent = this.i18n.t('form.placeholderParams');
+        if (responseLabel) {
+          // Preserve help link, only update text node
+          const helpLink = responseLabel.querySelector('.mm-help-link');
+          responseLabel.textContent = this.i18n.t('form.responseData');
+          if (helpLink) responseLabel.appendChild(helpLink);
         }
       }
 
@@ -1282,23 +1265,14 @@ export class Panel {
       // Code label
       if (formGroups[2]) {
         const codeLabel = formGroups[2].querySelector('.mm-label') as HTMLElement;
-        if (codeLabel) codeLabel.textContent = this.i18n.t('methods.code');
+        if (codeLabel) {
+          // Preserve help link, only update text node
+          const helpLink = codeLabel.querySelector('.mm-help-link');
+          codeLabel.textContent = this.i18n.t('methods.code');
+          if (helpLink) codeLabel.appendChild(helpLink);
+        }
         const codeInput = formGroups[2].querySelector('textarea') as HTMLTextAreaElement;
         if (codeInput && !this.editingMethodId) codeInput.placeholder = this.i18n.t('methods.codePlaceholder');
-
-        // Context help
-        const contextHelp = formGroups[2].querySelector('details.mm-context-help') as HTMLDetailsElement;
-        if (contextHelp) {
-          const contextTitle = contextHelp.querySelector('summary.mm-context-help-title') as HTMLElement;
-          if (contextTitle) contextTitle.textContent = this.i18n.t('methods.contextHelp');
-          const contextCodes = contextHelp.querySelectorAll('.mm-code') as NodeListOf<HTMLElement>;
-          if (contextCodes[0]) contextCodes[0].textContent = this.i18n.t('methods.contextUrl');
-          if (contextCodes[1]) contextCodes[1].textContent = this.i18n.t('methods.contextMethod');
-          if (contextCodes[2]) contextCodes[2].textContent = this.i18n.t('methods.contextBody');
-          if (contextCodes[3]) contextCodes[3].textContent = this.i18n.t('methods.contextParams');
-          if (contextCodes[4]) contextCodes[4].textContent = this.i18n.t('methods.contextMock');
-          if (contextCodes[5]) contextCodes[5].textContent = this.i18n.t('methods.contextSyntax');
-        }
       }
     }
 
@@ -2457,10 +2431,36 @@ export class Panel {
       }
 
       .mm-label {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         margin-bottom: 6px;
         font-weight: 500;
         color: #374151;
+      }
+
+      .mm-help-link {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        margin-left: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 50%;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+
+      .mm-help-link:hover {
+        color: #4f46e5;
+        background: #eef2ff;
+        border-color: #4f46e5;
       }
 
       .mm-input,
@@ -2861,96 +2861,6 @@ export class Panel {
         white-space: pre-wrap;
         max-height: 150px;
         overflow-y: auto;
-      }
-
-      .mm-context-help {
-        margin-top: 8px;
-        padding: 8px 12px;
-        background: #f0fdf4;
-        border: 1px solid #86efac;
-        border-radius: 6px;
-      }
-
-      .mm-context-help summary {
-        font-size: 12px;
-        font-weight: 500;
-        color: #16a34a;
-        cursor: pointer;
-        user-select: none;
-        list-style: none;
-        padding: 4px 0;
-      }
-
-      .mm-context-help summary::-webkit-details-marker {
-        display: none;
-      }
-
-      .mm-context-help summary::before {
-        content: '▶';
-        display: inline-block;
-        font-size: 10px;
-        margin-right: 6px;
-        transition: transform 0.2s;
-      }
-
-      .mm-context-help[open] summary::before {
-        transform: rotate(90deg);
-      }
-
-      .mm-context-help code {
-        display: block;
-        font-size: 11px;
-        color: #374151;
-        background: #fff;
-        padding: 4px 8px;
-        border-radius: 4px;
-        margin-top: 2px;
-        font-family: 'Monaco', 'Menlo', monospace;
-      }
-
-      .mm-placeholder-help {
-        margin-top: 8px;
-        padding: 8px 12px;
-        background: #eff6ff;
-        border: 1px solid #93c5fd;
-        border-radius: 6px;
-      }
-
-      .mm-placeholder-help summary {
-        font-size: 12px;
-        font-weight: 500;
-        color: #2563eb;
-        cursor: pointer;
-        user-select: none;
-        list-style: none;
-        padding: 4px 0;
-      }
-
-      .mm-placeholder-help summary::-webkit-details-marker {
-        display: none;
-      }
-
-      .mm-placeholder-help summary::before {
-        content: '▶';
-        display: inline-block;
-        font-size: 10px;
-        margin-right: 6px;
-        transition: transform 0.2s;
-      }
-
-      .mm-placeholder-help[open] summary::before {
-        transform: rotate(90deg);
-      }
-
-      .mm-placeholder-help code {
-        display: block;
-        font-size: 11px;
-        color: #374151;
-        background: #fff;
-        padding: 4px 8px;
-        border-radius: 4px;
-        margin-top: 2px;
-        font-family: 'Monaco', 'Menlo', monospace;
       }
 
       .mm-method-form-section {
