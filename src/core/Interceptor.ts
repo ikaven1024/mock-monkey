@@ -349,41 +349,53 @@ export class Interceptor {
     // Then, apply custom methods (@functionName pattern)
     processed = this.processCustomMethods(processed, ctx);
 
-    // Finally, replace @params.xxx placeholders
-    processed = this.processParams(processed, ctx);
+    // Finally, replace @ctx.xxx and @params.xxx placeholders
+    processed = this.processCtxPlaceholders(processed, ctx);
 
     return processed;
   }
 
   /**
-   * Process @params.xxx placeholders in response data
-   * Replaces @params.id, @params.userId, @{params.id}, @{params.id}xxx, etc. with actual route parameter values
+   * Process @ctx.xxx placeholders in response data
+   * Replaces @ctx.params.id, @ctx.url, @ctx.method, @{ctx.params.id}, etc. with actual context values
    */
-  private processParams(data: unknown, ctx: MethodContext): unknown {
+  private processCtxPlaceholders(data: unknown, ctx: MethodContext): unknown {
     if (data === null || data === undefined) {
       return data;
     }
 
-    // If string, replace @params.xxx patterns
+    // If string, replace @ctx.xxx patterns
     if (typeof data === 'string') {
-      // First, replace @{params.xxx} pattern (with curly braces, supports trailing text)
-      // Example: @{params.id} or @{params.id}_suffix
-      let result = data.replace(/@\{params\.([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, paramName) => {
+      let result = data;
+
+      // Replace @{ctx.params.xxx} pattern (with curly braces, supports trailing text)
+      // Example: @{ctx.params.id} or @{ctx.params.id}_suffix
+      result = result.replace(/@\{ctx\.params\.([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, paramName) => {
         if (ctx.params && paramName in ctx.params) {
           return ctx.params[paramName];
         }
-        // If param not found, keep original placeholder
         return match;
       });
 
-      // Then, replace @params.xxx pattern (without curly braces, simpler form)
-      // Example: @params.id (only if not already matched by the pattern above)
-      result = result.replace(/@params\.([a-zA-Z_][a-zA-Z0-9_]*)/g, (match, paramName) => {
+      // Replace @{ctx.url}, @{ctx.method}, @{ctx.body} patterns
+      result = result.replace(/@\{ctx\.(url|method|body)\}/g, (match, prop) => {
+        const value = ctx[prop as keyof MethodContext];
+        return value !== undefined ? String(value) : match;
+      });
+
+      // Replace @ctx.params.xxx pattern (without curly braces)
+      // Example: @ctx.params.id
+      result = result.replace(/@ctx\.params\.([a-zA-Z_][a-zA-Z0-9_]*)/g, (match, paramName) => {
         if (ctx.params && paramName in ctx.params) {
           return ctx.params[paramName];
         }
-        // If param not found, keep original placeholder
         return match;
+      });
+
+      // Replace @ctx.url, @ctx.method, @ctx.body patterns
+      result = result.replace(/@ctx\.(url|method|body)/g, (match, prop) => {
+        const value = ctx[prop as keyof MethodContext];
+        return value !== undefined ? String(value) : match;
       });
 
       return result;
@@ -391,14 +403,14 @@ export class Interceptor {
 
     // If array, process each element
     if (Array.isArray(data)) {
-      return data.map(item => this.processParams(item, ctx));
+      return data.map(item => this.processCtxPlaceholders(item, ctx));
     }
 
     // If object, process each value
     if (typeof data === 'object') {
       const result: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-        result[key] = this.processParams(value, ctx);
+        result[key] = this.processCtxPlaceholders(value, ctx);
       }
       return result;
     }
