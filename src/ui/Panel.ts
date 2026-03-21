@@ -141,11 +141,11 @@ export class Panel {
 
       <div class="mm-tabs">
         <button class="mm-tab mm-tab--active" data-tab="rules">${this.i18n.t('tabs.rules')}</button>
-        <button class="mm-tab" data-tab="requests">${this.i18n.t('tabs.network')}</button>
         <button class="mm-tab" data-tab="methods">
           ${this.i18n.t('tabs.methods')}
           <span class="mm-tab-alpha">ALPHA</span>
         </button>
+        <button class="mm-tab" data-tab="requests">${this.i18n.t('tabs.network')}</button>
       </div>
 
       <div class="mm-content">
@@ -201,23 +201,6 @@ export class Panel {
           </div>
         </div>
 
-        <div class="mm-tab-content" data-content="requests">
-          <div class="mm-toolbar">
-            <span class="mm-count">0 ${this.i18n.t('network.count')}</span>
-            <div class="mm-toolbar-actions">
-              <div class="mm-search-wrapper">
-                <svg class="mm-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M14 14L11.1 11.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <input class="mm-search-input" type="text" data-search="requests" placeholder="${this.i18n.t('network.searchPlaceholder')}">
-              </div>
-              <button class="mm-btn mm-btn--small" data-action="clear-requests">${this.i18n.t('network.clear')}</button>
-            </div>
-          </div>
-          <div class="mm-requests-list" data-requests-list></div>
-        </div>
-
         <div class="mm-tab-content" data-content="methods">
           <div class="mm-methods-container">
             <div class="mm-methods-list-section">
@@ -261,6 +244,23 @@ export class Panel {
               </form>
             </div>
           </div>
+        </div>
+
+        <div class="mm-tab-content" data-content="requests">
+          <div class="mm-toolbar">
+            <span class="mm-count">0 ${this.i18n.t('network.count')}</span>
+            <div class="mm-toolbar-actions">
+              <div class="mm-search-wrapper">
+                <svg class="mm-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M14 14L11.1 11.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <input class="mm-search-input" type="text" data-search="requests" placeholder="${this.i18n.t('network.searchPlaceholder')}">
+              </div>
+              <button class="mm-btn mm-btn--small" data-action="clear-requests">${this.i18n.t('network.clear')}</button>
+            </div>
+          </div>
+          <div class="mm-requests-list" data-requests-list></div>
         </div>
       </div>
 
@@ -593,11 +593,15 @@ export class Panel {
   /**
    * Bind drag events for rule list reordering
    */
-  private bindRuleDragEvents(listContainer: Element): void {
+  private bindRuleDragEvents(listContainer: Element): Element {
     const container = listContainer as HTMLElement;
+    // Clone container to remove old event listeners
+    const newContainer = container.cloneNode(true) as HTMLElement;
+    container.parentNode?.replaceChild(newContainer, container);
+
     let dragSource: HTMLElement | null = null;
 
-    container.addEventListener('dragstart', (e) => {
+    newContainer.addEventListener('dragstart', (e) => {
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-rule-item') as HTMLElement;
       if (!item) return;
@@ -614,7 +618,7 @@ export class Panel {
       }
     });
 
-    container.addEventListener('dragend', (e) => {
+    newContainer.addEventListener('dragend', (e) => {
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-rule-item') as HTMLElement;
       if (!item) return;
@@ -626,7 +630,7 @@ export class Panel {
       }
 
       // Collect new order and save
-      const newOrderIds = Array.from(container.querySelectorAll('.mm-rule-item'))
+      const newOrderIds = Array.from(newContainer.querySelectorAll('.mm-rule-item'))
         .map(el => (el as HTMLElement).dataset.ruleId)
         .filter((id): id is string => id !== undefined);
 
@@ -638,11 +642,11 @@ export class Panel {
       dragSource = null;
     });
 
-    container.addEventListener('dragenter', (e) => {
+    newContainer.addEventListener('dragenter', (e) => {
       e.preventDefault();
     });
 
-    container.addEventListener('dragover', (e) => {
+    newContainer.addEventListener('dragover', (e) => {
       e.preventDefault();
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-rule-item') as HTMLElement;
@@ -655,44 +659,50 @@ export class Panel {
       item.classList.add('mm-rule-item--drag-over');
     });
 
-    container.addEventListener('dragleave', (e) => {
+    newContainer.addEventListener('dragleave', (e) => {
       const target = e.target as HTMLElement;
-      if (target === container && this.dragOverItem) {
+      if (target === newContainer && this.dragOverItem) {
         this.dragOverItem.classList.remove('mm-rule-item--drag-over');
         this.dragOverItem = null;
       }
     });
 
-    container.addEventListener('drop', (e) => {
+    newContainer.addEventListener('drop', (e) => {
       e.preventDefault();
       e.stopPropagation();
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-rule-item') as HTMLElement;
       if (!item || !dragSource || dragSource === item) return;
 
-      const allItems = Array.from(container.querySelectorAll('.mm-rule-item'));
+      const allItems = Array.from(newContainer.querySelectorAll('.mm-rule-item'));
       const draggedIndex = allItems.indexOf(dragSource);
       const targetIndex = allItems.indexOf(item);
 
       if (draggedIndex < targetIndex) {
-        container.insertBefore(dragSource, item.nextSibling);
+        newContainer.insertBefore(dragSource, item.nextSibling);
       } else {
-        container.insertBefore(dragSource, item);
+        newContainer.insertBefore(dragSource, item);
       }
 
       item.classList.remove('mm-rule-item--drag-over');
       this.dragOverItem = null;
     });
+
+    return newContainer;
   }
 
   /**
    * Bind drag events for method list reordering
    */
-  private bindMethodDragEvents(listContainer: Element): void {
+  private bindMethodDragEvents(listContainer: Element): Element {
     const container = listContainer as HTMLElement;
+    // Clone container to remove old event listeners
+    const newContainer = container.cloneNode(true) as HTMLElement;
+    container.parentNode?.replaceChild(newContainer, container);
+
     let dragSource: HTMLElement | null = null;
 
-    container.addEventListener('dragstart', (e) => {
+    newContainer.addEventListener('dragstart', (e) => {
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-method-item') as HTMLElement;
       if (!item) return;
@@ -709,7 +719,7 @@ export class Panel {
       }
     });
 
-    container.addEventListener('dragend', (e) => {
+    newContainer.addEventListener('dragend', (e) => {
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-method-item') as HTMLElement;
       if (!item) return;
@@ -721,7 +731,7 @@ export class Panel {
       }
 
       // Collect new order and save
-      const newOrderIds = Array.from(container.querySelectorAll('.mm-method-item'))
+      const newOrderIds = Array.from(newContainer.querySelectorAll('.mm-method-item'))
         .map(el => (el as HTMLElement).dataset.methodId)
         .filter((id): id is string => id !== undefined);
 
@@ -733,11 +743,11 @@ export class Panel {
       dragSource = null;
     });
 
-    container.addEventListener('dragenter', (e) => {
+    newContainer.addEventListener('dragenter', (e) => {
       e.preventDefault();
     });
 
-    container.addEventListener('dragover', (e) => {
+    newContainer.addEventListener('dragover', (e) => {
       e.preventDefault();
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-method-item') as HTMLElement;
@@ -750,34 +760,36 @@ export class Panel {
       item.classList.add('mm-method-item--drag-over');
     });
 
-    container.addEventListener('dragleave', (e) => {
+    newContainer.addEventListener('dragleave', (e) => {
       const target = e.target as HTMLElement;
-      if (target === container && this.dragOverItem) {
+      if (target === newContainer && this.dragOverItem) {
         this.dragOverItem.classList.remove('mm-method-item--drag-over');
         this.dragOverItem = null;
       }
     });
 
-    container.addEventListener('drop', (e) => {
+    newContainer.addEventListener('drop', (e) => {
       e.preventDefault();
       e.stopPropagation();
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-method-item') as HTMLElement;
       if (!item || !dragSource || dragSource === item) return;
 
-      const allItems = Array.from(container.querySelectorAll('.mm-method-item'));
+      const allItems = Array.from(newContainer.querySelectorAll('.mm-method-item'));
       const draggedIndex = allItems.indexOf(dragSource);
       const targetIndex = allItems.indexOf(item);
 
       if (draggedIndex < targetIndex) {
-        container.insertBefore(dragSource, item.nextSibling);
+        newContainer.insertBefore(dragSource, item.nextSibling);
       } else {
-        container.insertBefore(dragSource, item);
+        newContainer.insertBefore(dragSource, item);
       }
 
       item.classList.remove('mm-method-item--drag-over');
       this.dragOverItem = null;
     });
+
+    return newContainer;
   }
 
   /**
@@ -1429,35 +1441,42 @@ export class Panel {
           <span class="mm-drag-handle" title="${this.i18n.t('common.drag')}">⋮⋮</span>
           <span class="mm-rule-pattern" title="${this.escapeHtmlAttr(rule.patternStr)}">${this.escapeHtml(rule.patternStr)}</span>
           <div class="mm-rule-actions">
+            <button class="mm-btn-icon" data-action="details" data-id="${rule.id}" title="${this.i18n.t('common.details')}">📋</button>
+            <button class="mm-btn-icon" data-action="edit" data-id="${rule.id}" title="${this.i18n.t('common.edit')}">✏️</button>
             <button class="mm-btn-icon" data-action="toggle" data-id="${rule.id}" title="${rule.enabled ? this.i18n.t('common.disable') : this.i18n.t('common.enable')}">
               ${rule.enabled ? '🟢' : '⚫'}
             </button>
-            <button class="mm-btn-icon" data-action="edit" data-id="${rule.id}" title="${this.i18n.t('common.edit')}">✏️</button>
             <button class="mm-btn-icon" data-action="delete" data-id="${rule.id}" title="${this.i18n.t('common.delete')}">🗑️</button>
           </div>
         </div>
-        <details class="mm-rule-details">
-          <summary class="mm-rule-summary">${this.i18n.t('common.details')}</summary>
+        <div class="mm-rule-details mm-details--hidden" data-details-for="${rule.id}">
           <div class="mm-rule-meta">
             <span>${this.i18n.t('rules.status')}: ${rule.status}</span>
             <span>${this.i18n.t('rules.delay')}: ${rule.delay}ms</span>
           </div>
           <pre class="mm-rule-response">${this.escapeHtml(JSON.stringify(rule.response, null, 2))}</pre>
-        </details>
+        </div>
       </div>
     `
       )
       .join('');
 
+    // Bind drag events for reordering (only when not filtering)
+    // This clones the container and returns the new one, so we must do it before binding button events
+    let actualContainer = listContainer;
+    if (!this.rulesSearchQuery) {
+      actualContainer = this.bindRuleDragEvents(listContainer) as HTMLElement;
+    }
+
     // Bind rule item events
-    listContainer.querySelectorAll('[data-action="toggle"]').forEach((btn) => {
+    actualContainer.querySelectorAll('[data-action="toggle"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
         if (id) (this as any).onToggleRule(id);
       });
     });
 
-    listContainer.querySelectorAll('[data-action="edit"]').forEach((btn) => {
+    actualContainer.querySelectorAll('[data-action="edit"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
         if (id) {
@@ -1467,17 +1486,25 @@ export class Panel {
       });
     });
 
-    listContainer.querySelectorAll('[data-action="delete"]').forEach((btn) => {
+    actualContainer.querySelectorAll('[data-action="delete"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
         if (id) (this as any).onDeleteRule(id);
       });
     });
 
-    // Bind drag events for reordering (only when not filtering)
-    if (!this.rulesSearchQuery) {
-      this.bindRuleDragEvents(listContainer);
-    }
+    // Bind details toggle
+    actualContainer.querySelectorAll('[data-action="details"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (id) {
+          const detailsEl = actualContainer.querySelector(`[data-details-for="${id}"]`) as HTMLElement;
+          if (detailsEl) {
+            detailsEl.classList.toggle('mm-details--hidden');
+          }
+        }
+      });
+    });
   }
 
   /**
@@ -1538,15 +1565,19 @@ export class Panel {
           <span class="mm-request-status" data-status="${req.status ? Math.floor(req.status / 100).toString() : ''}">${req.status ?? 'PENDING'}</span>
           <span class="mm-request-duration">${req.duration ? `${req.duration}ms` : '-'}</span>
           <span class="mm-request-time">${new Date(req.timestamp).toLocaleTimeString()}</span>
-          <button class="mm-btn mm-btn--small mm-btn-create-mock" data-action="create-mock" data-request-id="${req.id}" title="${this.i18n.t('network.createMock')}">
-            + Mock
-          </button>
+          <div class="mm-request-actions">
+            ${req.response !== undefined ? `
+              <button class="mm-btn mm-btn--small" data-action="request-details" data-id="${req.id}" title="${this.i18n.t('network.responseData')}">${this.i18n.t('network.showData')}</button>
+            ` : ''}
+            <button class="mm-btn mm-btn--small mm-btn-create-mock" data-action="create-mock" data-request-id="${req.id}" title="${this.i18n.t('network.createMock')}">
+              + Mock
+            </button>
+          </div>
         </div>
         ${req.response !== undefined ? `
-          <details class="mm-request-details">
-            <summary class="mm-request-summary">${this.i18n.t('network.responseData')}</summary>
+          <div class="mm-request-details mm-details--hidden" data-details-for="${req.id}">
             <pre class="mm-request-response">${this.escapeHtml(JSON.stringify(req.response, null, 2))}</pre>
-          </details>
+          </div>
         ` : ''}
       </div>
     `
@@ -1558,6 +1589,19 @@ export class Panel {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.requestId;
         if (id) this.handleCreateFromRequest(id);
+      });
+    });
+
+    // Bind details toggle
+    listContainer.querySelectorAll('[data-action="request-details"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (id) {
+          const detailsEl = listContainer.querySelector(`[data-details-for="${id}"]`) as HTMLElement;
+          if (detailsEl) {
+            detailsEl.classList.toggle('mm-details--hidden');
+          }
+        }
       });
     });
   }
@@ -1615,28 +1659,34 @@ export class Panel {
       <div class="mm-method-item ${method.enabled ? '' : 'mm-method-item--disabled'}" data-method-id="${method.id}" draggable="true">
         <div class="mm-method-header">
           <span class="mm-drag-handle" title="${this.i18n.t('common.drag')}">⋮⋮</span>
-          <div class="mm-method-name">
-            <code>@${method.name}</code>
-            ${!method.enabled ? `<span class="mm-badge mm-badge--disabled">${this.i18n.t('common.disable')}</span>` : ''}
+          <div class="mm-method-info">
+            <div class="mm-method-name">
+              <code>@${method.name}</code>
+              ${!method.enabled ? `<span class="mm-badge mm-badge--disabled">${this.i18n.t('common.disable')}</span>` : ''}
+            </div>
+            ${method.description ? `<div class="mm-method-description" title="${this.escapeHtmlAttr(method.description)}">${this.escapeHtml(method.description)}</div>` : ''}
           </div>
           <div class="mm-method-actions">
-            <button class="mm-btn mm-btn--small" data-action="toggle-method" data-id="${method.id}">
-              ${method.enabled ? this.i18n.t('common.disable') : this.i18n.t('common.enable')}
+            <button class="mm-btn-icon" data-action="method-details" data-id="${method.id}" title="${this.i18n.t('common.details')}">📋</button>
+            <button class="mm-btn-icon" data-action="edit-method" data-id="${method.id}" title="${this.i18n.t('common.edit')}">✏️</button>
+            <button class="mm-btn-icon" data-action="toggle-method" data-id="${method.id}" title="${method.enabled ? this.i18n.t('common.disable') : this.i18n.t('common.enable')}">
+              ${method.enabled ? '🟢' : '⚫'}
             </button>
-            <button class="mm-btn mm-btn--small" data-action="edit-method" data-id="${method.id}">${this.i18n.t('common.edit')}</button>
-            <button class="mm-btn mm-btn--small" data-action="delete-method" data-id="${method.id}">${this.i18n.t('common.delete')}</button>
+            <button class="mm-btn-icon" data-action="delete-method" data-id="${method.id}" title="${this.i18n.t('common.delete')}">🗑️</button>
           </div>
         </div>
-        ${method.description ? `<div class="mm-method-description">${method.description}</div>` : ''}
-        <details class="mm-method-details">
-          <summary class="mm-request-summary">${this.i18n.t('common.details')}</summary>
+        <div class="mm-method-details mm-details--hidden" data-details-for="${method.id}">
           <div class="mm-method-code"><code>${this.escapeHtml(method.code)}</code></div>
-        </details>
+        </div>
       </div>
     `).join('');
 
+    // Bind drag events for reordering
+    // This clones the container and returns the new one, so we must do it before binding button events
+    const actualContainer = this.bindMethodDragEvents(listContainer) as HTMLElement;
+
     // Bind method actions
-    listContainer.querySelectorAll('[data-action="toggle-method"]').forEach((btn) => {
+    actualContainer.querySelectorAll('[data-action="toggle-method"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
         if (id && this.onToggleMethod) {
@@ -1645,14 +1695,14 @@ export class Panel {
       });
     });
 
-    listContainer.querySelectorAll('[data-action="edit-method"]').forEach((btn) => {
+    actualContainer.querySelectorAll('[data-action="edit-method"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
         if (id) this.editMethod(id);
       });
     });
 
-    listContainer.querySelectorAll('[data-action="delete-method"]').forEach((btn) => {
+    actualContainer.querySelectorAll('[data-action="delete-method"]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const id = (e.currentTarget as HTMLElement).dataset.id;
         if (id && this.onDeleteMethod) {
@@ -1663,8 +1713,18 @@ export class Panel {
       });
     });
 
-    // Bind drag events for reordering
-    this.bindMethodDragEvents(listContainer);
+    // Bind details toggle
+    actualContainer.querySelectorAll('[data-action="method-details"]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).dataset.id;
+        if (id) {
+          const detailsEl = actualContainer.querySelector(`[data-details-for="${id}"]`) as HTMLElement;
+          if (detailsEl) {
+            detailsEl.classList.toggle('mm-details--hidden');
+          }
+        }
+      });
+    });
   }
 
   /**
@@ -2311,33 +2371,12 @@ export class Panel {
         gap: 4px;
       }
 
-      .mm-rule-details {
-        margin-top: 8px;
-      }
-
-      .mm-rule-summary {
-        cursor: pointer;
-        font-size: 12px;
-        color: #6b7280;
-        user-select: none;
-        padding: 4px 0;
-        list-style: none;
-      }
-
-      .mm-rule-summary::-webkit-details-marker {
+      .mm-details--hidden {
         display: none;
       }
 
-      .mm-rule-summary::before {
-        content: '▶';
-        display: inline-block;
-        margin-right: 6px;
-        transition: transform 0.2s;
-        font-size: 10px;
-      }
-
-      details[open] > .mm-rule-summary::before {
-        transform: rotate(90deg);
+      .mm-rule-details {
+        margin-top: 8px;
       }
 
       .mm-rule-meta {
@@ -2455,14 +2494,12 @@ export class Panel {
       }
 
       .mm-btn--small {
-        padding: 6px 12px;
-        font-size: 12px;
+        padding: 4px 10px;
+        font-size: 11px;
       }
 
       .mm-btn-create-mock {
         margin-left: auto;
-        padding: 4px 10px;
-        font-size: 11px;
         background: #4f46e5;
         color: #fff;
         border-color: #4f46e5;
@@ -2608,9 +2645,23 @@ export class Panel {
 
       .mm-request-meta {
         display: flex;
+        align-items: center;
+        justify-content: space-between;
         gap: 12px;
         font-size: 11px;
         color: #6b7280;
+      }
+
+      .mm-request-meta > *:not(.mm-request-actions) {
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .mm-request-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
       }
 
       .mm-request-status {
@@ -2636,18 +2687,6 @@ export class Panel {
 
       .mm-request-details {
         margin-top: 8px;
-      }
-
-      .mm-request-summary {
-        cursor: pointer;
-        font-size: 11px;
-        color: #6b7280;
-        user-select: none;
-        padding: 4px 0;
-      }
-
-      .mm-request-summary:hover {
-        color: #374151;
       }
 
       .mm-request-response {
@@ -2720,7 +2759,14 @@ export class Panel {
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        margin-bottom: 8px;
+      }
+
+      .mm-method-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
       }
 
       .mm-method-name {
@@ -2742,13 +2788,15 @@ export class Panel {
 
       .mm-method-actions {
         display: flex;
-        gap: 6px;
+        gap: 4px;
       }
 
       .mm-method-description {
-        font-size: 13px;
+        font-size: 12px;
         color: #6b7280;
-        margin-bottom: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .mm-method-code {

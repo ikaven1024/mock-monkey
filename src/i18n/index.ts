@@ -70,6 +70,7 @@ export interface NetworkTranslations {
   emptyHint: string;
   createMock: string;
   responseData: string;
+  showData: string;
   search: string;
   searchPlaceholder: string;
   noResults: string;
@@ -155,6 +156,7 @@ const translations: Record<Language, TranslationKey> = {
       emptyHint: '发起请求后会在此显示',
       createMock: '创建 Mock 规则',
       responseData: '响应数据',
+      showData: '显示数据',
       search: '搜索',
       searchPlaceholder: '搜索 URL 请求...',
       noResults: '未找到匹配的请求'
@@ -235,6 +237,7 @@ const translations: Record<Language, TranslationKey> = {
       emptyHint: 'Requests will appear here',
       createMock: 'Create Mock',
       responseData: 'Response Data',
+      showData: 'Show Data',
       search: 'Search',
       searchPlaceholder: 'Search URL requests...',
       noResults: 'No matching requests found'
