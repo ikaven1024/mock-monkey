@@ -117,22 +117,31 @@ After installing the script, visit any webpage:
 MockMonkey supports extracting route parameters from URLs and using them in responses:
 
 ```javascript
-// Rule pattern: /api/users/@params.id
+// Rule pattern: /api/users/:id
 // URL: /api/users/123
-// Response will use "123" for @params.id
+// Response will use "123" for @ctx.params.id
 
-mockMonkey.add('/api/users/@params.id', {
-  userId: '@params.id',
-  message: 'User @{params.id} loaded successfully'
+mockMonkey.add('/api/users/:id', {
+  userId: '@number(ctx.params.id)',
+  message: 'User @ctx.params.id loaded successfully'
 });
 
 // Example: GET /api/users/456 returns:
-// { "userId": "456", "message": "User 456 loaded successfully" }
+// { "userId": 456, "message": "User 456 loaded successfully" }
 ```
 
-Two syntax formats are supported:
-- `@params.xxx` - Simple placeholder
-- `@{params.xxx}` - Allows trailing text like `@{params.id}_suffix`
+**Type Conversion Syntax:**
+
+| Syntax | Effect |
+|--------|--------|
+| `@number(ctx.params.id)` | Returns number |
+| `@string(ctx.params.id)` | Returns string (default) |
+| `@boolean(ctx.params.id)` | Returns boolean |
+| `@ctx.params.id` | Returns string |
+
+**Two syntax formats are supported:**
+- `@ctx.params.xxx` - Simple placeholder
+- `@{ctx.params.xxx}` - Allows trailing text like `@{ctx.params.id}_suffix`
 
 ### 4. Custom Mock Methods (Alpha)
 
@@ -186,7 +195,7 @@ mockMonkey.addMethod('userById', `
   return { id: parseInt(id), name: 'User ' + id };
 `);
 
-mockMonkey.add('/api/users/@params.id', {
+mockMonkey.add('/api/users/:id', {
   data: '@{...userById}'
 });
 ```

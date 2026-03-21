@@ -117,22 +117,31 @@ npm run build
 MockMonkey 支持从 URL 中提取路由参数并在响应数据中使用：
 
 ```javascript
-// 规则模式: /api/users/@params.id
+// 规则模式: /api/users/:id
 // 请求 URL: /api/users/123
-// 响应数据中的 @params.id 会被替换为 "123"
+// 响应数据中的 @ctx.params.id 会被替换为 "123"
 
-mockMonkey.add('/api/users/@params.id', {
-  userId: '@params.id',
-  message: 'User @{params.id} loaded successfully'
+mockMonkey.add('/api/users/:id', {
+  userId: '@number(ctx.params.id)',
+  message: 'User @ctx.params.id loaded successfully'
 });
 
 // 示例：GET /api/users/456 返回：
-// { "userId": "456", "message": "User 456 loaded successfully" }
+// { "userId": 456, "message": "User 456 loaded successfully" }
 ```
 
-支持两种语法格式：
-- `@params.xxx` - 简单占位符
-- `@{params.xxx}` - 支持后缀文本，如 `@{params.id}_suffix`
+**类型转换语法：**
+
+| 语法 | 效果 |
+|------|------|
+| `@number(ctx.params.id)` | 返回数字 |
+| `@string(ctx.params.id)` | 返回字符串（默认） |
+| `@boolean(ctx.params.id)` | 返回布尔值 |
+| `@ctx.params.id` | 返回字符串 |
+
+**支持两种语法格式：**
+- `@ctx.params.xxx` - 简单占位符
+- `@{ctx.params.xxx}` - 支持后缀文本，如 `@{ctx.params.id}_suffix`
 
 ### 4. 自定义 Mock 方法（Alpha）
 
@@ -186,7 +195,7 @@ mockMonkey.addMethod('userById', `
   return { id: parseInt(id), name: 'User ' + id };
 `);
 
-mockMonkey.add('/api/users/@params.id', {
+mockMonkey.add('/api/users/:id', {
   data: '@{...userById}'
 });
 ```
