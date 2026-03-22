@@ -33,6 +33,7 @@ export class Panel {
   // Search state
   private rulesSearchQuery = '';
   private requestsSearchQuery = '';
+  private methodsSearchQuery = '';
 
   // Methods state
   private currentMethods: MockMethod[] = [];
@@ -212,7 +213,16 @@ export class Panel {
             <div class="mm-methods-list-section">
               <div class="mm-toolbar">
                 <span class="mm-count">0 ${this.i18n.t('methods.count')}</span>
-                <button class="mm-btn mm-btn--small mm-btn--primary" data-action="add-method">${this.i18n.t('methods.add')}</button>
+                <div class="mm-toolbar-actions">
+                  <div class="mm-search-wrapper">
+                    <svg class="mm-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M14 14L11.1 11.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <input class="mm-search-input" type="text" data-search="methods" placeholder="${this.i18n.t('methods.searchPlaceholder')}">
+                  </div>
+                  <button class="mm-btn mm-btn--small" data-action="add-method">${this.i18n.t('common.add')}</button>
+                </div>
               </div>
               <div class="mm-methods-list" data-methods-list></div>
             </div>
@@ -1083,6 +1093,15 @@ export class Panel {
       });
     }
 
+    // Search input for methods
+    const methodsSearchInput = this.shadowRoot.querySelector('[data-search="methods"]') as HTMLInputElement;
+    if (methodsSearchInput) {
+      methodsSearchInput.addEventListener('input', (e) => {
+        this.methodsSearchQuery = (e.currentTarget as HTMLInputElement).value;
+        this.updateMethods(this.currentMethods);
+      });
+    }
+
     // Methods - Add method button
     this.shadowRoot.querySelector('[data-action="add-method"]')?.addEventListener('click', () => {
       this.showMethodForm();
@@ -1235,9 +1254,12 @@ export class Panel {
     const requestsSearchInput = this.shadowRoot.querySelector('[data-search="requests"]') as HTMLInputElement;
     if (requestsSearchInput) requestsSearchInput.placeholder = this.i18n.t('network.searchPlaceholder');
 
+    const methodsSearchInput = this.shadowRoot.querySelector('[data-search="methods"]') as HTMLInputElement;
+    if (methodsSearchInput) methodsSearchInput.placeholder = this.i18n.t('methods.searchPlaceholder');
+
     // Update methods page
     const addMethodBtn = this.shadowRoot.querySelector('[data-action="add-method"]') as HTMLElement;
-    if (addMethodBtn) addMethodBtn.textContent = this.i18n.t('methods.add');
+    if (addMethodBtn) addMethodBtn.textContent = this.i18n.t('common.add');
 
     const submitMethodBtn = this.shadowRoot.querySelector('[data-submit-method-btn]') as HTMLElement;
     if (submitMethodBtn) {
@@ -1662,6 +1684,19 @@ export class Panel {
   }
 
   /**
+   * Filter methods by search query (case-insensitive)
+   */
+  private filterMethods(methods: MockMethod[], query: string): MockMethod[] {
+    if (!query.trim()) return methods;
+
+    const lowerQuery = query.toLowerCase();
+    return methods.filter(method =>
+      method.name.toLowerCase().includes(lowerQuery) ||
+      (method.description && method.description.toLowerCase().includes(lowerQuery))
+    );
+  }
+
+  /**
    * Update methods list
    */
   updateMethods(methods: MockMethod[]): void {
@@ -1672,10 +1707,19 @@ export class Panel {
     const countEl = this.shadowRoot.querySelector('[data-content="methods"] .mm-count');
     if (!listContainer) return;
 
+    // Filter methods based on search query
+    const filteredMethods = this.filterMethods(methods, this.methodsSearchQuery);
+
     if (countEl) {
-      countEl.textContent = `${methods.length} ${this.i18n.t('methods.count')}`;
+      // Show total count and filtered count if searching
+      if (this.methodsSearchQuery) {
+        countEl.textContent = `${filteredMethods.length}/${methods.length} ${this.i18n.t('methods.count')}`;
+      } else {
+        countEl.textContent = `${methods.length} ${this.i18n.t('methods.count')}`;
+      }
     }
 
+    // Show empty state based on whether we have methods and if search has results
     if (methods.length === 0) {
       listContainer.innerHTML = `
         <div class="mm-empty">
@@ -1686,7 +1730,16 @@ export class Panel {
       return;
     }
 
-    listContainer.innerHTML = methods.map(method => `
+    if (filteredMethods.length === 0) {
+      listContainer.innerHTML = `
+        <div class="mm-empty">
+          <p>${this.i18n.t('methods.noResults')}</p>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = filteredMethods.map(method => `
       <div class="mm-method-item ${method.enabled ? '' : 'mm-method-item--disabled'}" data-method-id="${method.id}" draggable="true">
         <div class="mm-method-header">
           <span class="mm-drag-handle" title="${this.i18n.t('common.drag')}">⋮⋮</span>

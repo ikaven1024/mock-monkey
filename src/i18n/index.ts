@@ -106,6 +106,8 @@ export interface MethodsTranslations {
   contextSyntax: string;
   alphaWarning: string;
   helpLinkTitle: string;
+  searchPlaceholder: string;
+  noResults: string;
 }
 
 /**
@@ -198,7 +200,9 @@ const translations: Record<Language, TranslationKey> = {
       contextMock: 'ctx.Mock - Mock.js 工具 (ctx.Mock.mock, ctx.Mock.Random)',
       contextSyntax: '@ctx.xxx - 占位符语法，在响应数据中使用 @ctx.url 引用变量值',
       alphaWarning: 'Alpha 功能：自定义方法正在开发中，API 可能会变更。使用需谨慎，避免在生产环境使用。',
-      helpLinkTitle: '查看高级用法说明'
+      helpLinkTitle: '查看高级用法说明',
+      searchPlaceholder: '搜索方法名称...',
+      noResults: '未找到匹配的方法'
     }
   },
   en: {
@@ -287,7 +291,9 @@ const translations: Record<Language, TranslationKey> = {
       contextMock: 'ctx.Mock - Mock.js utilities (ctx.Mock.mock, ctx.Mock.Random)',
       contextSyntax: '@ctx.xxx - Placeholder syntax, use @ctx.url in response data to reference variable values',
       alphaWarning: 'Alpha Feature: Custom methods are under development. APIs may change. Use with caution, not recommended for production.',
-      helpLinkTitle: 'View advanced usage documentation'
+      helpLinkTitle: 'View advanced usage documentation',
+      searchPlaceholder: 'Search method names...',
+      noResults: 'No matching methods found'
     }
   }
 };
