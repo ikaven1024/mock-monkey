@@ -37,6 +37,7 @@ export class Panel {
   // Methods state
   private currentMethods: MockMethod[] = [];
   private editingMethodId: string | null = null;
+  private recorder?: any; // RequestRecorder instance
 
   // List drag reordering state
   private draggedItem: HTMLElement | null = null;
@@ -49,8 +50,10 @@ export class Panel {
     private onAddMethod?: (method: CreateMockMethodParams) => void,
     private onUpdateMethod?: (id: string, method: CreateMockMethodParams) => void,
     private onDeleteMethod?: (id: string) => void,
-    private onToggleMethod?: (id: string) => void
+    private onToggleMethod?: (id: string) => void,
+    recorder?: any
   ) {
+    this.recorder = recorder;
     // Initialize i18n (singleton)
     this.i18n = I18n.getInstance();
     // Load saved position from localStorage
@@ -1018,6 +1021,9 @@ export class Panel {
 
     // Clear network requests
     this.shadowRoot.querySelector('[data-action="clear-requests"]')?.addEventListener('click', () => {
+      if (this.recorder) {
+        this.recorder.clear();
+      }
       this.updateNetworkRequests([]);
     });
 
@@ -2900,7 +2906,8 @@ export class PanelWithCallbacks extends Panel {
     onAddRule: (rule: RuleFormData) => void,
     private callbacks: RuleCallbacks,
     onCreateFromRequest?: (request: NetworkRequest) => void,
-    private methodCallbacks?: MethodCallbacks
+    private methodCallbacks?: MethodCallbacks,
+    recorder?: any
   ) {
     super(
       onAddRule,
@@ -2909,7 +2916,8 @@ export class PanelWithCallbacks extends Panel {
       methodCallbacks?.onAdd,
       methodCallbacks?.onUpdate,
       methodCallbacks?.onDelete,
-      methodCallbacks?.onToggle
+      methodCallbacks?.onToggle,
+      recorder
     );
   }
 
