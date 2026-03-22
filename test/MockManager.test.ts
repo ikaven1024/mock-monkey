@@ -295,7 +295,8 @@ describe('MockManager', () => {
 
       const result = manager.findMatchWithParams('https://example.com/api/items/abc123?query=test');
       expect(result).toBeDefined();
-      expect(result?.params).toEqual({ itemId: 'abc123' });
+      // 现在包含路径参数和查询参数
+      expect(result?.params).toEqual({ itemId: 'abc123', query: 'test' });
     });
 
     it('不应该匹配不完整的路由参数', () => {
@@ -306,6 +307,62 @@ describe('MockManager', () => {
 
       const result = manager.findMatchWithParams('https://example.com/v1/users/123/posts');
       expect(result).toBeNull();
+    });
+
+    it('应该提取查询参数（字符串模式）', () => {
+      manager.add({
+        pattern: '/api/users',
+        response: { users: [] },
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/api/users?page=1&limit=10');
+      expect(result).toBeDefined();
+      expect(result?.params).toEqual({ page: '1', limit: '10' });
+    });
+
+    it('应该提取查询参数（正则表达式模式）', () => {
+      manager.add({
+        pattern: /\/api\/users\/\d+/,
+        response: { users: [] },
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/api/users/123?filter=active');
+      expect(result).toBeDefined();
+      expect(result?.params).toEqual({ filter: 'active' });
+    });
+
+    it('应该合并路径参数和查询参数（查询参数优先）', () => {
+      manager.add({
+        pattern: '/api/users/:id',
+        response: { user: {} },
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/api/users/123?id=999&name=test');
+      expect(result).toBeDefined();
+      // 路径参数 id=123 被查询参数 id=999 覆盖
+      expect(result?.params).toEqual({ id: '999', name: 'test' });
+    });
+
+    it('应该正确处理无值的查询参数', () => {
+      manager.add({
+        pattern: '/api/search',
+        response: { results: [] },
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/api/search?empty&foo=bar');
+      expect(result).toBeDefined();
+      expect(result?.params).toEqual({ empty: '', foo: 'bar' });
+    });
+
+    it('应该处理包含特殊字符的查询参数值', () => {
+      manager.add({
+        pattern: '/api/search',
+        response: { results: [] },
+      });
+
+      const result = manager.findMatchWithParams('https://example.com/api/search?q=hello%20world&filter=a%2Bb');
+      expect(result).toBeDefined();
+      expect(result?.params).toEqual({ q: 'hello world', filter: 'a+b' });
     });
 
     it('没有匹配时应返回 null', () => {

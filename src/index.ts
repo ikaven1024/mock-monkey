@@ -43,7 +43,8 @@ class MockMonkey {
         onReorder: (ids) => this.handleReorderRules(ids)
       },
       undefined,
-      methodCallbacks
+      methodCallbacks,
+      this.recorder
     );
 
     // Subscribe to request changes, update panel

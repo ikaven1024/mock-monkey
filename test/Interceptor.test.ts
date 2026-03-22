@@ -136,7 +136,7 @@ describe('Interceptor', () => {
     });
 
     it('应该记录 Fetch 请求', () => {
-      fetch('https://example.com/api/test');
+      fetch('https://example.com/api/test').catch(() => {});
 
       const requests = recorder.getRequests();
       const testRequest = requests.find((r) => r.url.includes('/api/test'));
@@ -150,7 +150,7 @@ describe('Interceptor', () => {
       fetch('https://example.com/api/test', {
         method: 'POST',
         body: '{"key":"value"}',
-      });
+      }).catch(() => {});
 
       const requests = recorder.getRequests();
       const testRequest = requests.find((r) => r.url.includes('/api/test'));
@@ -180,7 +180,7 @@ describe('Interceptor', () => {
         response: { name: 'Mocked User' },
       });
 
-      fetch('https://example.com/api/other');
+      fetch('https://example.com/api/other').catch(() => {});
 
       const requests = recorder.getRequests();
       const otherRequest = requests.find((r) => r.url.includes('/api/other'));
@@ -210,7 +210,7 @@ describe('Interceptor', () => {
 
       manager.toggle(rule.id);
 
-      fetch('https://example.com/api/disabled');
+      fetch('https://example.com/api/disabled').catch(() => {});
 
       const requests = recorder.getRequests();
       const disabledRequest = requests.find((r) => r.url.includes('/api/disabled'));

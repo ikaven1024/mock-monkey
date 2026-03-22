@@ -33,10 +33,12 @@ export class Panel {
   // Search state
   private rulesSearchQuery = '';
   private requestsSearchQuery = '';
+  private methodsSearchQuery = '';
 
   // Methods state
   private currentMethods: MockMethod[] = [];
   private editingMethodId: string | null = null;
+  private recorder?: any; // RequestRecorder instance
 
   // List drag reordering state
   private draggedItem: HTMLElement | null = null;
@@ -49,8 +51,10 @@ export class Panel {
     private onAddMethod?: (method: CreateMockMethodParams) => void,
     private onUpdateMethod?: (id: string, method: CreateMockMethodParams) => void,
     private onDeleteMethod?: (id: string) => void,
-    private onToggleMethod?: (id: string) => void
+    private onToggleMethod?: (id: string) => void,
+    recorder?: any
   ) {
+    this.recorder = recorder;
     // Initialize i18n (singleton)
     this.i18n = I18n.getInstance();
     // Load saved position from localStorage
@@ -177,7 +181,10 @@ export class Panel {
                 </div>
 
                 <div class="mm-form-group">
-                  <label class="mm-label">${this.i18n.t('form.responseData')}</label>
+                  <label class="mm-label">
+                    ${this.i18n.t('form.responseData')}
+                    <a href="https://github.com/ikaven1024/mock-monkey/wiki/Rule-Syntax" target="_blank" class="mm-help-link" title="${this.i18n.t('form.helpLinkTitle')}">?</a>
+                  </label>
                   <textarea class="mm-textarea" name="response" rows="6" placeholder='${this.i18n.t('form.responseDataPlaceholder')}' required></textarea>
                 </div>
 
@@ -193,8 +200,8 @@ export class Panel {
                 </div>
 
                 <div class="mm-form-actions">
-                  <button type="button" class="mm-btn" data-action="cancel-rule">${this.i18n.t('methods.cancel')}</button>
-                  <button type="submit" class="mm-btn mm-btn--primary" data-submit-rule-btn>${this.i18n.t('methods.save')}</button>
+                  <button type="button" class="mm-btn mm-btn--small" data-action="cancel-rule">${this.i18n.t('methods.cancel')}</button>
+                  <button type="submit" class="mm-btn mm-btn--small mm-btn--primary" data-submit-rule-btn>${this.i18n.t('methods.save')}</button>
                 </div>
               </form>
             </div>
@@ -206,7 +213,16 @@ export class Panel {
             <div class="mm-methods-list-section">
               <div class="mm-toolbar">
                 <span class="mm-count">0 ${this.i18n.t('methods.count')}</span>
-                <button class="mm-btn mm-btn--small mm-btn--primary" data-action="add-method">${this.i18n.t('methods.add')}</button>
+                <div class="mm-toolbar-actions">
+                  <div class="mm-search-wrapper">
+                    <svg class="mm-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7.33333 12.6667C10.2789 12.6667 12.6667 10.2789 12.6667 7.33333C12.6667 4.38781 10.2789 2 7.33333 2C4.38781 2 2 4.38781 2 7.33333C2 10.2789 4.38781 12.6667 7.33333 12.6667Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M14 14L11.1 11.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <input class="mm-search-input" type="text" data-search="methods" placeholder="${this.i18n.t('methods.searchPlaceholder')}">
+                  </div>
+                  <button class="mm-btn mm-btn--small" data-action="add-method">${this.i18n.t('common.add')}</button>
+                </div>
               </div>
               <div class="mm-methods-list" data-methods-list></div>
             </div>
@@ -225,21 +241,16 @@ export class Panel {
                 </div>
 
                 <div class="mm-form-group">
-                  <label class="mm-label">${this.i18n.t('methods.code')}</label>
+                  <label class="mm-label">
+                    ${this.i18n.t('methods.code')}
+                    <a href="https://github.com/ikaven1024/mock-monkey/wiki/Advanced-Usage" target="_blank" class="mm-help-link" title="${this.i18n.t('methods.helpLinkTitle')}">?</a>
+                  </label>
                   <textarea class="mm-textarea" name="code" placeholder="${this.i18n.t('methods.codePlaceholder')}" required rows="8"></textarea>
-                  <details class="mm-context-help">
-                    <summary class="mm-context-help-title">${this.i18n.t('methods.contextHelp')}</summary>
-                    <code class="mm-code">${this.i18n.t('methods.contextUrl')}</code><br>
-                    <code class="mm-code">${this.i18n.t('methods.contextMethod')}</code><br>
-                    <code class="mm-code">${this.i18n.t('methods.contextBody')}</code><br>
-                    <code class="mm-code">${this.i18n.t('methods.contextParams')}</code><br>
-                    <code class="mm-code">${this.i18n.t('methods.contextMock')}</code>
-                  </details>
                 </div>
 
                 <div class="mm-form-actions">
-                  <button type="button" class="mm-btn" data-action="cancel-method">${this.i18n.t('methods.cancel')}</button>
-                  <button type="submit" class="mm-btn mm-btn--primary" data-submit-method-btn>${this.i18n.t('methods.save')}</button>
+                  <button type="button" class="mm-btn mm-btn--small" data-action="cancel-method">${this.i18n.t('methods.cancel')}</button>
+                  <button type="submit" class="mm-btn mm-btn--small mm-btn--primary" data-submit-method-btn>${this.i18n.t('methods.save')}</button>
                 </div>
               </form>
             </div>
@@ -600,11 +611,25 @@ export class Panel {
     container.parentNode?.replaceChild(newContainer, container);
 
     let dragSource: HTMLElement | null = null;
+    // Track if drag handle was clicked
+    let dragHandleClicked = false;
+
+    newContainer.addEventListener('mousedown', (e) => {
+      const target = e.target as HTMLElement;
+      const dragHandle = target.closest('.mm-drag-handle');
+      dragHandleClicked = !!dragHandle;
+    });
 
     newContainer.addEventListener('dragstart', (e) => {
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-rule-item') as HTMLElement;
       if (!item) return;
+
+      // Only allow dragging when clicking the drag handle
+      if (!dragHandleClicked) {
+        e.preventDefault();
+        return;
+      }
 
       dragSource = item;
       this.draggedItem = item;
@@ -640,6 +665,7 @@ export class Panel {
 
       this.draggedItem = null;
       dragSource = null;
+      dragHandleClicked = false;
     });
 
     newContainer.addEventListener('dragenter', (e) => {
@@ -701,11 +727,25 @@ export class Panel {
     container.parentNode?.replaceChild(newContainer, container);
 
     let dragSource: HTMLElement | null = null;
+    // Track if drag handle was clicked
+    let dragHandleClicked = false;
+
+    newContainer.addEventListener('mousedown', (e) => {
+      const target = e.target as HTMLElement;
+      const dragHandle = target.closest('.mm-drag-handle');
+      dragHandleClicked = !!dragHandle;
+    });
 
     newContainer.addEventListener('dragstart', (e) => {
       const target = e.target as HTMLElement;
       const item = target.closest('.mm-method-item') as HTMLElement;
       if (!item) return;
+
+      // Only allow dragging when clicking the drag handle
+      if (!dragHandleClicked) {
+        e.preventDefault();
+        return;
+      }
 
       dragSource = item;
       this.draggedItem = item;
@@ -741,6 +781,7 @@ export class Panel {
 
       this.draggedItem = null;
       dragSource = null;
+      dragHandleClicked = false;
     });
 
     newContainer.addEventListener('dragenter', (e) => {
@@ -990,6 +1031,9 @@ export class Panel {
 
     // Clear network requests
     this.shadowRoot.querySelector('[data-action="clear-requests"]')?.addEventListener('click', () => {
+      if (this.recorder) {
+        this.recorder.clear();
+      }
       this.updateNetworkRequests([]);
     });
 
@@ -1046,6 +1090,15 @@ export class Panel {
       requestsSearchInput.addEventListener('input', (e) => {
         this.requestsSearchQuery = (e.currentTarget as HTMLInputElement).value;
         this.updateNetworkRequests(this.networkRequests);
+      });
+    }
+
+    // Search input for methods
+    const methodsSearchInput = this.shadowRoot.querySelector('[data-search="methods"]') as HTMLInputElement;
+    if (methodsSearchInput) {
+      methodsSearchInput.addEventListener('input', (e) => {
+        this.methodsSearchQuery = (e.currentTarget as HTMLInputElement).value;
+        this.updateMethods(this.currentMethods);
       });
     }
 
@@ -1148,7 +1201,12 @@ export class Panel {
       // Response Data label
       if (formGroups[1]) {
         const responseLabel = formGroups[1].querySelector('.mm-label') as HTMLElement;
-        if (responseLabel) responseLabel.textContent = this.i18n.t('form.responseData');
+        if (responseLabel) {
+          // Preserve help link, only update text node
+          const helpLink = responseLabel.querySelector('.mm-help-link');
+          responseLabel.textContent = this.i18n.t('form.responseData');
+          if (helpLink) responseLabel.appendChild(helpLink);
+        }
       }
 
       // Delay and Status labels (in form-row)
@@ -1171,7 +1229,7 @@ export class Panel {
 
     const submitBtn = this.shadowRoot.querySelector('[data-submit-rule-btn]') as HTMLElement;
     if (submitBtn) {
-      submitBtn.textContent = this.editingRuleId ? this.i18n.t('form.saveRule') : this.i18n.t('form.addRule');
+      submitBtn.textContent = this.i18n.t('common.save');
     }
 
     // Update rules page
@@ -1196,13 +1254,16 @@ export class Panel {
     const requestsSearchInput = this.shadowRoot.querySelector('[data-search="requests"]') as HTMLInputElement;
     if (requestsSearchInput) requestsSearchInput.placeholder = this.i18n.t('network.searchPlaceholder');
 
+    const methodsSearchInput = this.shadowRoot.querySelector('[data-search="methods"]') as HTMLInputElement;
+    if (methodsSearchInput) methodsSearchInput.placeholder = this.i18n.t('methods.searchPlaceholder');
+
     // Update methods page
     const addMethodBtn = this.shadowRoot.querySelector('[data-action="add-method"]') as HTMLElement;
-    if (addMethodBtn) addMethodBtn.textContent = this.i18n.t('methods.add');
+    if (addMethodBtn) addMethodBtn.textContent = this.i18n.t('common.add');
 
     const submitMethodBtn = this.shadowRoot.querySelector('[data-submit-method-btn]') as HTMLElement;
     if (submitMethodBtn) {
-      submitMethodBtn.textContent = this.editingMethodId ? this.i18n.t('methods.save') : this.i18n.t('methods.add');
+      submitMethodBtn.textContent = this.i18n.t('common.save');
     }
 
     const cancelMethodBtn = this.shadowRoot.querySelector('[data-action="cancel-method"]') as HTMLElement;
@@ -1232,22 +1293,14 @@ export class Panel {
       // Code label
       if (formGroups[2]) {
         const codeLabel = formGroups[2].querySelector('.mm-label') as HTMLElement;
-        if (codeLabel) codeLabel.textContent = this.i18n.t('methods.code');
+        if (codeLabel) {
+          // Preserve help link, only update text node
+          const helpLink = codeLabel.querySelector('.mm-help-link');
+          codeLabel.textContent = this.i18n.t('methods.code');
+          if (helpLink) codeLabel.appendChild(helpLink);
+        }
         const codeInput = formGroups[2].querySelector('textarea') as HTMLTextAreaElement;
         if (codeInput && !this.editingMethodId) codeInput.placeholder = this.i18n.t('methods.codePlaceholder');
-
-        // Context help
-        const contextHelp = formGroups[2].querySelector('details.mm-context-help') as HTMLDetailsElement;
-        if (contextHelp) {
-          const contextTitle = contextHelp.querySelector('summary.mm-context-help-title') as HTMLElement;
-          if (contextTitle) contextTitle.textContent = this.i18n.t('methods.contextHelp');
-          const contextCodes = contextHelp.querySelectorAll('.mm-code') as NodeListOf<HTMLElement>;
-          if (contextCodes[0]) contextCodes[0].textContent = this.i18n.t('methods.contextUrl');
-          if (contextCodes[1]) contextCodes[1].textContent = this.i18n.t('methods.contextMethod');
-          if (contextCodes[2]) contextCodes[2].textContent = this.i18n.t('methods.contextBody');
-          if (contextCodes[3]) contextCodes[3].textContent = this.i18n.t('methods.contextParams');
-          if (contextCodes[4]) contextCodes[4].textContent = this.i18n.t('methods.contextMock');
-        }
       }
     }
 
@@ -1326,7 +1379,7 @@ export class Panel {
 
     if (rule) {
       this.editingRuleId = rule.id;
-      if (submitBtn) submitBtn.textContent = this.i18n.t('form.saveRule');
+      if (submitBtn) submitBtn.textContent = this.i18n.t('common.save');
 
       // Fill form
       const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
@@ -1343,7 +1396,7 @@ export class Panel {
     } else {
       // Add new rule
       this.editingRuleId = null;
-      if (submitBtn) submitBtn.textContent = this.i18n.t('form.addRule');
+      if (submitBtn) submitBtn.textContent = this.i18n.t('common.save');
 
       const patternInput = this.shadowRoot.querySelector('[name="pattern"]') as HTMLInputElement;
       const responseInput = this.shadowRoot.querySelector('[name="response"]') as HTMLTextAreaElement;
@@ -1631,6 +1684,19 @@ export class Panel {
   }
 
   /**
+   * Filter methods by search query (case-insensitive)
+   */
+  private filterMethods(methods: MockMethod[], query: string): MockMethod[] {
+    if (!query.trim()) return methods;
+
+    const lowerQuery = query.toLowerCase();
+    return methods.filter(method =>
+      method.name.toLowerCase().includes(lowerQuery) ||
+      (method.description && method.description.toLowerCase().includes(lowerQuery))
+    );
+  }
+
+  /**
    * Update methods list
    */
   updateMethods(methods: MockMethod[]): void {
@@ -1641,10 +1707,19 @@ export class Panel {
     const countEl = this.shadowRoot.querySelector('[data-content="methods"] .mm-count');
     if (!listContainer) return;
 
+    // Filter methods based on search query
+    const filteredMethods = this.filterMethods(methods, this.methodsSearchQuery);
+
     if (countEl) {
-      countEl.textContent = `${methods.length} ${this.i18n.t('methods.count')}`;
+      // Show total count and filtered count if searching
+      if (this.methodsSearchQuery) {
+        countEl.textContent = `${filteredMethods.length}/${methods.length} ${this.i18n.t('methods.count')}`;
+      } else {
+        countEl.textContent = `${methods.length} ${this.i18n.t('methods.count')}`;
+      }
     }
 
+    // Show empty state based on whether we have methods and if search has results
     if (methods.length === 0) {
       listContainer.innerHTML = `
         <div class="mm-empty">
@@ -1655,7 +1730,16 @@ export class Panel {
       return;
     }
 
-    listContainer.innerHTML = methods.map(method => `
+    if (filteredMethods.length === 0) {
+      listContainer.innerHTML = `
+        <div class="mm-empty">
+          <p>${this.i18n.t('methods.noResults')}</p>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = filteredMethods.map(method => `
       <div class="mm-method-item ${method.enabled ? '' : 'mm-method-item--disabled'}" data-method-id="${method.id}" draggable="true">
         <div class="mm-method-header">
           <span class="mm-drag-handle" title="${this.i18n.t('common.drag')}">⋮⋮</span>
@@ -1743,7 +1827,7 @@ export class Panel {
 
     if (method) {
       this.editingMethodId = method.id;
-      if (submitBtn) submitBtn.textContent = this.i18n.t('methods.save');
+      if (submitBtn) submitBtn.textContent = this.i18n.t('common.save');
 
       // Fill form - use specific selectors to avoid conflict with rule form
       const form = this.shadowRoot.querySelector('[data-action="method-form"]') as HTMLFormElement;
@@ -1759,7 +1843,7 @@ export class Panel {
     } else {
       // Add new method - pre-fill with selflink example
       this.editingMethodId = null;
-      if (submitBtn) submitBtn.textContent = this.i18n.t('methods.add');
+      if (submitBtn) submitBtn.textContent = this.i18n.t('common.save');
 
       const form = this.shadowRoot.querySelector('[data-action="method-form"]') as HTMLFormElement;
       const nameInput = form?.querySelector('[name="name"]') as HTMLInputElement;
@@ -1943,36 +2027,13 @@ export class Panel {
   }
 
   /**
-   * Convert full URL to route parameter pattern
-   * Example: https://example.com/api/users/123 → /api/users/:id
-   *          https://example.com/v1/users/123/posts/456 → /v1/users/:userId/posts/:postId
+   * Convert full URL to path pattern (preserves original URL)
+   * Example: https://example.com/api/users/123 → /api/users/123
    */
   private urlToRoutePattern(url: string): string {
     try {
       const urlObj = new URL(url);
-      const path = urlObj.pathname;
-
-      // Split path into segments
-      const segments = path.split('/').filter(s => s.length > 0);
-
-      // Convert numeric segments to :param
-      const convertedSegments = segments.map(segment => {
-        // Check if segment is numeric (ID-like)
-        if (/^\d+$/.test(segment)) {
-          return ':id';
-        }
-        // Check if segment is a UUID-like string
-        if (/^[0-9a-f-]{36}$/i.test(segment) || /^[0-9a-f]{24}$/i.test(segment)) {
-          return ':id';
-        }
-        // Check if segment looks like a hash (alphanumeric with possible special chars)
-        if (/^[a-zA-Z0-9_-]{8,}$/.test(segment)) {
-          return ':id';
-        }
-        return segment;
-      });
-
-      return '/' + convertedSegments.join('/');
+      return urlObj.pathname;
     } catch {
       // If URL parsing fails, return original
       return url;
@@ -2368,7 +2429,7 @@ export class Panel {
 
       .mm-rule-actions {
         display: flex;
-        gap: 4px;
+        gap: 2px;
       }
 
       .mm-details--hidden {
@@ -2406,10 +2467,36 @@ export class Panel {
       }
 
       .mm-label {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         margin-bottom: 6px;
         font-weight: 500;
         color: #374151;
+      }
+
+      .mm-help-link {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        margin-left: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 50%;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+
+      .mm-help-link:hover {
+        color: #4f46e5;
+        background: #eef2ff;
+        border-color: #4f46e5;
       }
 
       .mm-input,
@@ -2514,9 +2601,9 @@ export class Panel {
       .mm-btn-icon {
         background: none;
         border: none;
-        font-size: 16px;
+        font-size: 14px;
         cursor: pointer;
-        padding: 4px 8px;
+        padding: 2px 4px;
         border-radius: 4px;
         opacity: 0.7;
         transition: opacity 0.2s;
@@ -2788,7 +2875,7 @@ export class Panel {
 
       .mm-method-actions {
         display: flex;
-        gap: 4px;
+        gap: 2px;
       }
 
       .mm-method-description {
@@ -2810,51 +2897,6 @@ export class Panel {
         white-space: pre-wrap;
         max-height: 150px;
         overflow-y: auto;
-      }
-
-      .mm-context-help {
-        margin-top: 8px;
-        padding: 8px 12px;
-        background: #f0fdf4;
-        border: 1px solid #86efac;
-        border-radius: 6px;
-      }
-
-      .mm-context-help summary {
-        font-size: 12px;
-        font-weight: 500;
-        color: #16a34a;
-        cursor: pointer;
-        user-select: none;
-        list-style: none;
-        padding: 4px 0;
-      }
-
-      .mm-context-help summary::-webkit-details-marker {
-        display: none;
-      }
-
-      .mm-context-help summary::before {
-        content: '▶';
-        display: inline-block;
-        font-size: 10px;
-        margin-right: 6px;
-        transition: transform 0.2s;
-      }
-
-      .mm-context-help[open] summary::before {
-        transform: rotate(90deg);
-      }
-
-      .mm-context-help code {
-        display: block;
-        font-size: 11px;
-        color: #374151;
-        background: #fff;
-        padding: 4px 8px;
-        border-radius: 4px;
-        margin-top: 4px;
-        font-family: 'Monaco', 'Menlo', monospace;
       }
 
       .mm-method-form-section {
@@ -2917,7 +2959,8 @@ export class PanelWithCallbacks extends Panel {
     onAddRule: (rule: RuleFormData) => void,
     private callbacks: RuleCallbacks,
     onCreateFromRequest?: (request: NetworkRequest) => void,
-    private methodCallbacks?: MethodCallbacks
+    private methodCallbacks?: MethodCallbacks,
+    recorder?: any
   ) {
     super(
       onAddRule,
@@ -2926,7 +2969,8 @@ export class PanelWithCallbacks extends Panel {
       methodCallbacks?.onAdd,
       methodCallbacks?.onUpdate,
       methodCallbacks?.onDelete,
-      methodCallbacks?.onToggle
+      methodCallbacks?.onToggle,
+      recorder
     );
   }
 

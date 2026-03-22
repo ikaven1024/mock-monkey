@@ -349,41 +349,82 @@ export class Interceptor {
     // Then, apply custom methods (@functionName pattern)
     processed = this.processCustomMethods(processed, ctx);
 
-    // Finally, replace @params.xxx placeholders
-    processed = this.processParams(processed, ctx);
+    // Finally, replace @ctx.xxx and @params.xxx placeholders
+    processed = this.processCtxPlaceholders(processed, ctx);
 
     return processed;
   }
 
   /**
-   * Process @params.xxx placeholders in response data
-   * Replaces @params.id, @params.userId, @{params.id}, @{params.id}xxx, etc. with actual route parameter values
+   * Process @ctx.xxx placeholders in response data
+   * Supports type conversion: @number(...), @string(...), @boolean(...)
+   * Default is string type for @ctx.params.id, @ctx.url, etc.
    */
-  private processParams(data: unknown, ctx: MethodContext): unknown {
+  private processCtxPlaceholders(data: unknown, ctx: MethodContext): unknown {
     if (data === null || data === undefined) {
       return data;
     }
 
-    // If string, replace @params.xxx patterns
+    // If string, replace @ctx.xxx patterns
     if (typeof data === 'string') {
-      // First, replace @{params.xxx} pattern (with curly braces, supports trailing text)
-      // Example: @{params.id} or @{params.id}_suffix
-      let result = data.replace(/@\{params\.([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, paramName) => {
+      const str = data;
+      let result: string | number | boolean = str;
+
+      // Handle @type(content) pattern when entire string is just the type converter
+      // Example: "@number(ctx.params.id)" -> returns number
+      const typeMatch = str.match(/^@(number|string|boolean)\((.*)\)$/);
+      if (typeMatch) {
+        const [, type, content] = typeMatch;
+        const value = this.evalCtxPlaceholder(content, ctx);
+        return this.convertType(value, type as 'number' | 'string' | 'boolean');
+      }
+
+      // Replace @number(...) patterns in string (mixed content)
+      result = result.replace(/@number\(([^)]+)\)/g, (match, content) => {
+        const value = this.evalCtxPlaceholder(content, ctx);
+        const converted = this.convertType(value, 'number');
+        return String(converted);
+      });
+
+      // Replace @string(...) patterns in string
+      result = result.replace(/@string\(([^)]+)\)/g, (match, content) => {
+        const value = this.evalCtxPlaceholder(content, ctx);
+        return String(value);
+      });
+
+      // Replace @boolean(...) patterns in string
+      result = result.replace(/@boolean\(([^)]+)\)/g, (match, content) => {
+        const value = this.evalCtxPlaceholder(content, ctx);
+        const converted = this.convertType(value, 'boolean');
+        return String(converted);
+      });
+
+      // Replace @{ctx.params.xxx} pattern (with curly braces, supports trailing text)
+      result = (result as string).replace(/@\{ctx\.params\.([a-zA-Z_][a-zA-Z0-9_]*)\}/g, (match, paramName) => {
         if (ctx.params && paramName in ctx.params) {
           return ctx.params[paramName];
         }
-        // If param not found, keep original placeholder
         return match;
       });
 
-      // Then, replace @params.xxx pattern (without curly braces, simpler form)
-      // Example: @params.id (only if not already matched by the pattern above)
-      result = result.replace(/@params\.([a-zA-Z_][a-zA-Z0-9_]*)/g, (match, paramName) => {
+      // Replace @{ctx.url}, @{ctx.method}, @{ctx.body} patterns
+      result = (result as string).replace(/@\{ctx\.(url|method|body)\}/g, (match, prop) => {
+        const value = ctx[prop as keyof MethodContext];
+        return value !== undefined ? String(value) : match;
+      });
+
+      // Replace @ctx.params.xxx pattern (without curly braces)
+      result = (result as string).replace(/@ctx\.params\.([a-zA-Z_][a-zA-Z0-9_]*)/g, (match, paramName) => {
         if (ctx.params && paramName in ctx.params) {
           return ctx.params[paramName];
         }
-        // If param not found, keep original placeholder
         return match;
+      });
+
+      // Replace @ctx.url, @ctx.method, @ctx.body patterns
+      result = (result as string).replace(/@ctx\.(url|method|body)/g, (match, prop) => {
+        const value = ctx[prop as keyof MethodContext];
+        return value !== undefined ? String(value) : match;
       });
 
       return result;
@@ -391,19 +432,60 @@ export class Interceptor {
 
     // If array, process each element
     if (Array.isArray(data)) {
-      return data.map(item => this.processParams(item, ctx));
+      return data.map(item => this.processCtxPlaceholders(item, ctx));
     }
 
     // If object, process each value
     if (typeof data === 'object') {
       const result: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-        result[key] = this.processParams(value, ctx);
+        result[key] = this.processCtxPlaceholders(value, ctx);
       }
       return result;
     }
 
     return data;
+  }
+
+  /**
+   * Evaluate context placeholder expression
+   * Examples: "ctx.params.id", "ctx.url", "ctx.method"
+   */
+  private evalCtxPlaceholder(content: string, ctx: MethodContext): string | undefined {
+    // Handle ctx.params.xxx pattern
+    const paramMatch = content.match(/^ctx\.params\.([a-zA-Z_][a-zA-Z0-9_]*)$/);
+    if (paramMatch && ctx.params && paramMatch[1] in ctx.params) {
+      return ctx.params[paramMatch[1]];
+    }
+
+    // Handle ctx.url, ctx.method, ctx.body pattern
+    const ctxMatch = content.match(/^ctx\.(url|method|body)$/);
+    if (ctxMatch) {
+      const value = ctx[ctxMatch[1] as keyof MethodContext];
+      return value !== undefined ? String(value) : undefined;
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Convert value to specified type
+   */
+  private convertType(value: string | undefined, type: 'number' | 'string' | 'boolean'): string | number | boolean {
+    if (value === undefined) {
+      return type === 'boolean' ? false : '';
+    }
+
+    switch (type) {
+      case 'number':
+        const num = Number(value);
+        return isNaN(num) ? 0 : num;
+      case 'boolean':
+        return value === 'true' || value === '1' || value === 'yes';
+      case 'string':
+      default:
+        return String(value);
+    }
   }
 
   /**

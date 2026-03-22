@@ -53,6 +53,11 @@ export interface FormTranslations {
   urlPatternHint: string;
   responseData: string;
   responseDataPlaceholder: string;
+  placeholderHelp: string;
+  placeholderUrl: string;
+  placeholderMethod: string;
+  placeholderBody: string;
+  placeholderParams: string;
   delay: string;
   status: string;
   addRule: string;
@@ -61,6 +66,7 @@ export interface FormTranslations {
   importError: string;
   jsonError: string;
   regexError: string;
+  helpLinkTitle: string;
 }
 
 export interface NetworkTranslations {
@@ -97,7 +103,11 @@ export interface MethodsTranslations {
   contextBody: string;
   contextParams: string;
   contextMock: string;
+  contextSyntax: string;
   alphaWarning: string;
+  helpLinkTitle: string;
+  searchPlaceholder: string;
+  noResults: string;
 }
 
 /**
@@ -117,7 +127,7 @@ const translations: Record<Language, TranslationKey> = {
       confirmDelete: '确定要删除这条规则吗？',
       export: '导出',
       import: '导入',
-      drag: '拖动排序'
+      drag: '拖动面板'
     },
     tabs: {
       rules: '规则',
@@ -140,6 +150,11 @@ const translations: Record<Language, TranslationKey> = {
       urlPatternHint: '支持字符串或正则表达式（格式：/pattern/flags）',
       responseData: '响应数据 (JSON) *',
       responseDataPlaceholder: '{"code": 200, "data": {}}',
+      placeholderHelp: '可用占位符',
+      placeholderUrl: '@ctx.url - 请求 URL',
+      placeholderMethod: '@ctx.method - 请求方法',
+      placeholderBody: '@ctx.body - 请求体 (JSON)',
+      placeholderParams: '@ctx.params - URL 路径参数',
       delay: '延迟 (ms)',
       status: '状态码',
       addRule: '添加规则',
@@ -147,7 +162,8 @@ const translations: Record<Language, TranslationKey> = {
       cancelEdit: '取消',
       importError: '导入文件格式错误：必须是数组',
       jsonError: '响应数据 JSON 格式错误',
-      regexError: '正则表达式格式错误'
+      regexError: '正则表达式格式错误',
+      helpLinkTitle: '查看规则语法说明'
     },
     network: {
       count: '条请求',
@@ -180,9 +196,13 @@ const translations: Record<Language, TranslationKey> = {
       contextUrl: 'ctx.url - 请求 URL',
       contextMethod: 'ctx.method - 请求方法',
       contextBody: 'ctx.body - 请求体',
-      contextParams: 'ctx.params - URL 路径参数 (如 /api/user/@params.id)',
+      contextParams: 'ctx.params - URL 路径参数',
       contextMock: 'ctx.Mock - Mock.js 工具 (ctx.Mock.mock, ctx.Mock.Random)',
-      alphaWarning: 'Alpha 功能：自定义方法正在开发中，API 可能会变更。使用需谨慎，避免在生产环境使用。'
+      contextSyntax: '@ctx.xxx - 占位符语法，在响应数据中使用 @ctx.url 引用变量值',
+      alphaWarning: 'Alpha 功能：自定义方法正在开发中，API 可能会变更。使用需谨慎，避免在生产环境使用。',
+      helpLinkTitle: '查看高级用法说明',
+      searchPlaceholder: '搜索方法名称...',
+      noResults: '未找到匹配的方法'
     }
   },
   en: {
@@ -198,7 +218,7 @@ const translations: Record<Language, TranslationKey> = {
       confirmDelete: 'Are you sure you want to delete this rule?',
       export: 'Export',
       import: 'Import',
-      drag: 'Drag to reorder'
+      drag: 'Drag panel'
     },
     tabs: {
       rules: 'Rules',
@@ -221,6 +241,11 @@ const translations: Record<Language, TranslationKey> = {
       urlPatternHint: 'Support string or regex (format: /pattern/flags)',
       responseData: 'Response Data (JSON) *',
       responseDataPlaceholder: '{"code": 200, "data": {}}',
+      placeholderHelp: 'Available placeholders',
+      placeholderUrl: '@ctx.url - Request URL',
+      placeholderMethod: '@ctx.method - Request method',
+      placeholderBody: '@ctx.body - Request body (JSON)',
+      placeholderParams: '@ctx.params - URL path params',
       delay: 'Delay (ms)',
       status: 'Status Code',
       addRule: 'Add Rule',
@@ -228,7 +253,8 @@ const translations: Record<Language, TranslationKey> = {
       cancelEdit: 'Cancel',
       importError: 'Import file format error: must be an array',
       jsonError: 'Response data JSON format error',
-      regexError: 'Regex format error'
+      regexError: 'Regex format error',
+      helpLinkTitle: 'View rule syntax documentation'
     },
     network: {
       count: 'requests',
@@ -261,9 +287,13 @@ const translations: Record<Language, TranslationKey> = {
       contextUrl: 'ctx.url - Request URL',
       contextMethod: 'ctx.method - Request method',
       contextBody: 'ctx.body - Request body',
-      contextParams: 'ctx.params - URL path params (e.g. /api/user/@params.id)',
+      contextParams: 'ctx.params - URL path params',
       contextMock: 'ctx.Mock - Mock.js utilities (ctx.Mock.mock, ctx.Mock.Random)',
-      alphaWarning: 'Alpha Feature: Custom methods are under development. APIs may change. Use with caution, not recommended for production.'
+      contextSyntax: '@ctx.xxx - Placeholder syntax, use @ctx.url in response data to reference variable values',
+      alphaWarning: 'Alpha Feature: Custom methods are under development. APIs may change. Use with caution, not recommended for production.',
+      helpLinkTitle: 'View advanced usage documentation',
+      searchPlaceholder: 'Search method names...',
+      noResults: 'No matching methods found'
     }
   }
 };
