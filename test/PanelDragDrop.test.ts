@@ -3,18 +3,11 @@
  * Tests for the drag & drop functionality in Panel.ts
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Panel } from '../src/ui/Panel';
-import { I18n } from '../src/i18n';
-import type { RuleItem } from '../src/ui/Panel';
-import type { MockMethod } from '../src/types';
+import { PanelWithCallbacks } from '../src/ui/Panel';
+import type { RuleCallbacks, MethodCallbacks } from '../src/ui/Panel';
 
-// Access private methods for testing
-type PanelWithPrivateAccess = {
-  bindRuleDragEvents: (listContainer: Element) => Element;
-  bindMethodDragEvents: (listContainer: Element) => Element;
-  onReorderRules: (ids: string[]) => void;
-  onReorderMethods: (ids: string[]) => void;
-};
+// Access private methods for testing using 'any' to bypass type restrictions
+type PanelWithPrivateAccess = any;
 
 // Create mock HTML element with drag handle
 function createDraggableRuleItem(id: string, pattern: string): HTMLElement {
@@ -109,25 +102,26 @@ function simulateDrag(
 }
 
 describe('Panel Rule Drag & Drop', () => {
-  let panel: Panel & PanelWithPrivateAccess;
+  let panel: PanelWithCallbacks & PanelWithPrivateAccess;
   let container: HTMLElement;
   let onReorderRulesSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     onReorderRulesSpy = vi.fn();
 
-    // Create Panel instance with reorder callback
-    panel = new Panel(
-      () => {},
-      () => {},
-      () => {},
-      {
-        onReorderRules: onReorderRulesSpy,
-      }
-    ) as Panel & PanelWithPrivateAccess;
+    const ruleCallbacks: RuleCallbacks = {
+      onToggle: vi.fn() as any,
+      onEdit: vi.fn() as any,
+      onDelete: vi.fn() as any,
+      onReorder: onReorderRulesSpy as any,
+    };
 
-    // Set up reorder function
-    panel.onReorderRules = onReorderRulesSpy;
+    // Create PanelWithCallbacks instance with reorder callback
+    panel = new PanelWithCallbacks(
+      () => {},
+      ruleCallbacks,
+      () => {}
+    ) as PanelWithCallbacks & PanelWithPrivateAccess;
 
     // Create container with mock rule items
     container = document.createElement('div');
@@ -320,25 +314,34 @@ describe('Panel Rule Drag & Drop', () => {
 });
 
 describe('Panel Method Drag & Drop', () => {
-  let panel: Panel & PanelWithPrivateAccess;
+  let panel: PanelWithCallbacks & PanelWithPrivateAccess;
   let container: HTMLElement;
   let onReorderMethodsSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     onReorderMethodsSpy = vi.fn();
 
-    // Create Panel instance with reorder callback
-    panel = new Panel(
-      () => {},
-      () => {},
-      () => {},
-      {
-        onReorderMethods: onReorderMethodsSpy,
-      }
-    ) as Panel & PanelWithPrivateAccess;
+    const ruleCallbacks: RuleCallbacks = {
+      onToggle: vi.fn() as any,
+      onEdit: vi.fn() as any,
+      onDelete: vi.fn() as any,
+    };
 
-    // Set up reorder function
-    panel.onReorderMethods = onReorderMethodsSpy;
+    const methodCallbacks: MethodCallbacks = {
+      onAdd: vi.fn() as any,
+      onUpdate: vi.fn() as any,
+      onDelete: vi.fn() as any,
+      onToggle: vi.fn() as any,
+      onReorder: onReorderMethodsSpy as any,
+    };
+
+    // Create PanelWithCallbacks instance with reorder callback
+    panel = new PanelWithCallbacks(
+      () => {},
+      ruleCallbacks,
+      () => {},
+      methodCallbacks
+    ) as PanelWithCallbacks & PanelWithPrivateAccess;
 
     // Create container with mock method items
     container = document.createElement('div');
